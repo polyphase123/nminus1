@@ -1,0 +1,2594 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WESM N-1 Contingency Simulator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --bg: #f9fafb;
+            --card-bg: #ffffff;
+            --text-main: #111827;
+            --text-sub: #6b7280;
+            --border: #e5e7eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding-bottom: 80px;
+        }
+
+        #splash {
+            position: fixed;
+            inset: 0;
+            background: white;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease;
+        }
+
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 5px solid var(--border);
+            border-bottom-color: var(--primary);
+            border-radius: 50%;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        header {
+            background: white;
+            padding: 16px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-area h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .badge {
+            background: #dbeafe;
+            color: var(--primary);
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 999px;
+            font-weight: 600;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .top-credit {
+            text-align: center;
+            margin-bottom: 24px;
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            background: white;
+            padding: 12px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .dev-name {
+            color: #ef4444;
+            font-weight: 700;
+            display: block;
+            margin-top: 4px;
+            font-size: 0.9rem;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 12px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            flex: 1;
+        }
+
+        .search-input-wrapper i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-sub);
+        }
+
+        .search-input-wrapper input {
+            width: 100%;
+            padding: 14px 20px 14px 48px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            outline: none;
+            box-shadow: var(--shadow);
+        }
+
+        .reset-btn {
+            background: #f3f4f6;
+            color: var(--text-sub);
+            border: none;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow);
+            font-size: 0.85rem;
+        }
+
+        .reset-btn:hover {
+            background: #e5e7eb;
+        }
+
+        .filter-btn {
+            background: #f3f4f6;
+            color: var(--text-sub);
+            border: none;
+            padding: 12px;
+            border-radius: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow);
+        }
+
+        .filter-panel {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 24px;
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .filter-panel.active {
+            display: flex;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .filter-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-sub);
+            text-transform: uppercase;
+        }
+
+        .filter-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filter-chip {
+            padding: 6px 12px;
+            background: #f3f4f6;
+            border: 1px solid var(--border);
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .filter-chip.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .stat-card label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-sub);
+            text-transform: uppercase;
+        }
+
+        .stat-card .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            margin-top: 16px;
+        }
+
+        .section-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .data-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .list-item {
+            background: white;
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .list-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .icon-box {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .icon-blue {
+            background: #eff6ff;
+            color: #3b82f6;
+        }
+
+        .icon-green {
+            background: #ecfdf5;
+            color: #10b981;
+        }
+
+        .icon-purple {
+            background: #f5f3ff;
+            color: #8b5cf6;
+        }
+
+        .icon-red {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .icon-orange {
+            background: #fff7ed;
+            color: #f97316;
+        }
+
+        .item-content {
+            flex: 1;
+        }
+
+        .item-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .item-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-sub);
+            text-decoration: none;
+            font-size: 10px;
+            width: 25%;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .details-view {
+            position: fixed;
+            inset: 0;
+            background: white;
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .details-view.active {
+            display: flex;
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+            }
+
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        .details-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        .impact-btn {
+            width: 100%;
+            padding: 14px;
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .affected-badge {
+            font-size: 10px;
+            background: #fee2e2;
+            color: #ef4444;
+            padding: 2px 8px;
+            border-radius: 99px;
+            font-weight: 600;
+        }
+
+        .highlight-card {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            shadow: var(--shadow);
+        }
+
+        .highlight-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .highlight-card p {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="splash">
+        <div class="loader"></div>
+        <p style="margin-top:16px;">Initializing N-1 Simulator...</p>
+    </div>
+    <header>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+            <div class="logo-area" style="display: flex; align-items: center; gap: 10px;"><i data-lucide="shield-alert"
+                    style="color:var(--danger)"></i>
+                <h1>N-1 Simulator</h1>
+            </div>
+            <div style="font-size: 0.6rem; color: var(--text-sub); margin-left: 34px;">Designed & Developed by <span
+                    style="color: #ef4444; font-weight: 700;">Engr. Franz Xyrlo I. Tobias, PEE</span></div>
+        </div>
+        <button class="back-btn" id="notifications-trigger"><i data-lucide="bell"
+                style="width:20px; color:var(--text-sub)"></i></button>
+    </header>
+    <div class="container">
+        <div id="home-page" class="page active">
+
+
+            <div class="search-container">
+                <div class="search-input-wrapper">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="global-search" placeholder="Search resources...">
+                </div>
+                <button class="reset-btn" id="reset-search">
+                    <i data-lucide="rotate-ccw" style="width:16px;"></i> Reset
+                </button>
+                <button class="filter-btn" id="filter-toggle" title="Filters">
+                    <i data-lucide="sliders-horizontal" style="width:18px;"></i>
+                </button>
+            </div>
+
+            <div class="filter-panel" id="filter-panel">
+                <div class="filter-section">
+                    <div class="filter-label">Asset Type</div>
+                    <div class="filter-options">
+                        <div class="filter-chip" data-filter="type" data-value="station">Stations</div>
+                        <div class="filter-chip" data-filter="type" data-value="gen">Generators</div>
+                        <div class="filter-chip" data-filter="type" data-value="load">Loads</div>
+                    </div>
+                </div>
+                <div class="filter-section">
+                    <div class="filter-label">Region</div>
+                    <div class="filter-options">
+                        <div class="filter-chip" data-filter="region" data-value="LUZON">Luzon</div>
+                        <div class="filter-chip" data-filter="region" data-value="VISAYAS">Visayas</div>
+                        <div class="filter-chip" data-filter="region" data-value="MINDANAO">Mindanao</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <h2>Interconnection Highlights</h2>
+            </div>
+            <div class="highlight-card" onclick="openInterconnection('MVIP')">
+                <h3><i data-lucide="link"></i> MVIP Mindanao-Visayas</h3>
+                <p>Transfer capacity: 450MW. Submarine link connecting Kolambugan and Cebu hubs.</p>
+            </div>
+            <div class="highlight-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%)"
+                onclick="openInterconnection('HVDC')">
+                <h3><i data-lucide="zap"></i> Leyte-Luzon HVDC</h3>
+                <p>Critical 350kV bi-pole link connecting Visayas and Luzon grids.</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card"><label>Grid Nodes</label>
+                    <div class="value" id="stat-nodes">...</div>
+                </div>
+                <div class="stat-card"><label>Total Assets</label>
+                    <div class="value" id="stat-assets">...</div>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <h2>Key Infrastructure</h2>
+            </div>
+            <div class="data-list" id="featured-stations"></div>
+        </div>
+
+        <div id="index-page" class="page">
+            <div class="section-header">
+                <h2>Network Index</h2>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 16px;">Click categories to explore full
+                breakdown and run simulations.</p>
+            <div class="data-list">
+                <div class="list-item" onclick="openIndexBreakdown('GEN')">
+                    <div class="icon-box icon-green"><i data-lucide="zap"></i></div>
+                    <div class="item-content">
+                        <div class="item-title">Total Generators</div>
+                        <div class="item-subtitle" id="count-gens">...</div>
+                    </div>
+                    <i data-lucide="chevron-right"></i>
+                </div>
+                <div class="list-item" onclick="openIndexBreakdown('LOAD')">
+                    <div class="icon-box icon-blue"><i data-lucide="arrow-down-circle"></i></div>
+                    <div class="item-content">
+                        <div class="item-title">Total Loads Center</div>
+                        <div class="item-subtitle" id="count-loads">...</div>
+                    </div>
+                    <i data-lucide="chevron-right"></i>
+                </div>
+                <div class="list-item" onclick="openIndexBreakdown('BRANCH')">
+                    <div class="icon-box icon-purple"><i data-lucide="git-branch"></i></div>
+                    <div class="item-content">
+                        <div class="item-title">Transmission Branch Groups</div>
+                        <div class="item-subtitle" id="count-branches">...</div>
+                    </div>
+                    <i data-lucide="chevron-right"></i>
+                </div>
+            </div>
+        </div>
+
+        <div id="analytics-page" class="page">
+            <div class="section-header">
+                <h2>Contingency Planning</h2>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 16px;">Select corridor to simulate N-1
+                transmission outage impacts.</p>
+            <div class="data-list" id="branch-groups-list"></div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="#" class="nav-item active" onclick="showPage('home-page')"><i
+                data-lucide="home"></i><span>Home</span></a>
+        <a href="#" class="nav-item" onclick="showPage('index-page')"><i
+                data-lucide="layout-grid"></i><span>Index</span></a>
+        <a href="#" class="nav-item" onclick="showPage('analytics-page')"><i
+                data-lucide="shield-alert"></i><span>Contingency</span></a>
+    </nav>
+
+    <div class="details-view" id="details-overlay">
+        <div class="details-header"><button class="back-btn" onclick="closeDetails()"><i
+                    data-lucide="chevron-left"></i></button>
+            <h2 id="details-title">Details</h2>
+        </div>
+        <div class="container" id="details-content"></div>
+    </div>
+    <div class="details-view" id="impact-overlay">
+        <div class="details-header" style="background:#b91c1c; color:white;"><button class="back-btn"
+                onclick="closeImpact()" style="color:white;"><i data-lucide="x"></i></button>
+            <h2>Impact Analysis</h2>
+        </div>
+        <div class="container" id="impact-content"></div>
+    </div>
+
+    <script>
+
+        const csvStations = `STATION NAME,REGION_NAME,BUS NAME,VOLTAGE LEVEL
+01AMBKLAO,LUZON,"230_01AMBKLAO	",230
+01AMBKLAO,LUZON,"69_01AMBKLAO	",69
+01AMBKLAO,LUZON,"14_01AMBKLAO	",13.8
+01AMBKLAO,LUZON,"1_01AMBKLAO	",1
+01ANGAT,LUZON,"14_01ANGAT	",13.8
+01ANGAT,LUZON,"4_01ANGAT	",4
+01ANGAT,LUZON,"115_01ANGAT	",115
+01ANGSJO_TP2,LUZON,"115_01ANGSJO_TP2	",115
+01ANGSJO_TP4,LUZON,"115_01ANGSJO_TP4	",115
+01BAKUN,LUZON,"14_01BAKUN	",13.8
+01BAKUN,LUZON,"230_01BAKUN	",230
+01BALINGUEO,LUZON,"230_01BALINGUEO	",230
+01BALINGUEO,LUZON,"69_01BALINGUEO	",69
+01BALSIK,LUZON,"500_01BALSIK	",500
+01BALSIK,LUZON,"230_01BALSIK	",230
+01BAUANG,LUZON,"115_01BAUANG	",115
+01BAUANG,LUZON,"1_01BAUANG	",1
+01BAUANG,LUZON,"69_01BAUANG	",69
+01BAUANG,LUZON,"230_01BAUANG	",230
+01BCCPP,LUZON,"35_01BCCPP	",34.5
+01BCCPP,LUZON,"230_01BCCPP	",230
+01BCCPP,LUZON,"14_01BCCPP	",13.8
+01BCNOTAN,LUZON,"69_01BCNOTAN	",69
+01BCNOTAN,LUZON,"230_01BCNOTAN	",230
+01BINGA,LUZON,"14_01BINGA	",13.8
+01BINGA,LUZON,"230_01BINGA	",230
+01BINGA,LUZON,"69_01BINGA	",69
+01BNTAY,LUZON,"69_01BNTAY	",69
+01BNTAY,LUZON,"115_01BNTAY	",115
+01BOTOLAN,LUZON,"230_01BOTOLAN	",230
+01BOTOLAN,LUZON,"69_01BOTOLAN	",69
+01BPC,LUZON,"230_01BPC	",230
+01BPPC,LUZON,"14_01BPPC	",13.8
+01BPPC,LUZON,"230_01BPPC	",230
+01BURGOS,LUZON,"35_01BURGOS	",34.5
+01BURGOS,LUZON,"115_01BURGOS	",115
+01BYOMBNG,LUZON,"69_01BYOMBNG	",69
+01BYOMBNG,LUZON,"230_01BYOMBNG	",230
+01CASCNAN,LUZON,"230_01CASCNAN	",230
+01CASCNAN,LUZON,"14_01CASCNAN	",13.8
+01CASTILEHV,LUZON,"500_01CASTILEHV	",500
+01CASTILEHV,LUZON,"230_01CASTILEHV	",230
+01CASTILEHV,LUZON,"230_01OLONGSOL	",230
+01CASTILEHV,LUZON,"35_01OLONGSOL	",34.5
+01CAWAGO,LUZON,"23_01CAWAGO	",22.8
+01CAWAGO,LUZON,"230_01CAWAGO	",230
+01CAYANGA,LUZON,"230_01CAYANGA	",230
+01CAYANGA,LUZON,"23_01CAYANGA	",22.8
+01CAYANGA,LUZON,"230_01PVS	",230
+01CAYANGA,LUZON,"23_01PVS	",22.8
+01CAYANGA,LUZON,"230_01PVP	",230
+01CAYANGA,LUZON,"23_01PVP	",22.8
+01CBNTUAN,LUZON,"69_01CBNTUAN	",69
+01CBNTUAN,LUZON,"14_01CBNTUAN	",13.8
+01CBNTUAN,LUZON,"230_01CBNTUAN	",230
+01CLARK,LUZON,"230_01CLARK	",230
+01CLARK,LUZON,"69_01CLARK	",69
+01CNCEPCN,LUZON,"230_01CNCEPCN	",230
+01CNCEPCN,LUZON,"69_01CNCEPCN	",69
+01CURIMAO,LUZON,"69_01PAGULUDAN	",69
+01CURIMAO,LUZON,"115_01CURIMAO	",115
+01CURIMAO,LUZON,"69_01CURIMAO	",69
+01DUHAT,LUZON,"230_01DUHAT	",230
+01DUHAT,LUZON,"115_01DUHAT	",115
+01EHVNAGSAAG,LUZON,"500_01EHVNAGSAAG	",500
+01EHVNAGSAAG,LUZON,"69_01EHVNAGSAAG	",69
+01EHVNAGSAAG,LUZON,"230_01EHVNAGSAAG	",230
+01EHVSJOS,LUZON,"35_01EHVSJOS	",34.5
+01EHVSJOS,LUZON,"500_01EHVSJOS	",500
+01EHVSJOS,LUZON,"230_01EHVSJOS	",230
+01EHVSJOS,LUZON,"115_01EHVSJOS	",115
+01EHVTERRA,LUZON,"500_01EHVTERRA	",500
+01EHVTERRA,LUZON,"230_01EHVTERRA	",230
+01GAMU,LUZON,"69_01GAMU	",69
+01GAMU,LUZON,"230_01GAMU	",230
+01HERMOSA,LUZON,"69_01HERMOSA	",69
+01HERMOSA,LUZON,"230_01HERMOSA	",230
+01KDAMEHV,LUZON,"230_01KDAMEHV	",230
+01KDAMEHV,LUZON,"500_01KDAMEHV	",500
+01LAMAO,LUZON,"230_01LAMAO	",230
+01LAMAO,LUZON,"14_01LAMAO	",13.8
+01LAOAG,LUZON,"115_01LAOAG	",115
+01LAOAG,LUZON,"69_01LAOAG	",69
+01LAOAG,LUZON,"230_01LAOAG	",230
+01LAOAG,LUZON,"115_BALAOI	",115
+01LATRINI,LUZON,"230_01LATRINI	",230
+01LATRINI,LUZON,"69_01LATRINI	",69
+01LBRADOR,LUZON,"230_01LBRADOR	",230
+01LBRADOR,LUZON,"69_01LBRADOR	",69
+01LIMAY,LUZON,"230_01LIMAY	",230
+01LIMAY,LUZON,"69_01LIMAY	",69
+01MAGAT,LUZON,"230_01MAGAT	",230
+01MAGAT,LUZON,"14_01MAGAT	",13.8
+01MALOLOS,LUZON,"69_01MALOLOS	",69
+01MALOLOS,LUZON,"230_01MALOLOS	",230
+01MAREHV,LUZON,"500_01MAREHV	",500
+01MARIVELES,LUZON,"230_01MARIVELES	",230
+01MARIVELES,LUZON,"69_01MARIVELES	",69
+01MARIVELES,LUZON,"18_01MARIVELES	",18
+01MARIVELES,LUZON,"500_01DINGININ	",500
+01MARIVELES,LUZON,"26_01MARIVELES	",24
+01MARIVELES,LUZON,"500_01MARIVELES	",500
+01MEXICO,LUZON,"230_01MEXICO	",230
+01MEXICO,LUZON,"69_01MEXICO	",69
+01MPGC,LUZON,"500_01MPGC	",500
+01MPGC,LUZON,"14_01MPGC	",13.8
+01MSINLOC,LUZON,"7_01MSINLOC	",6.9
+01MSINLOC,LUZON,"230_01MSINLOC	",230
+01MSINLOC,LUZON,"22_01MSINLOC	",22
+01OLONGAP,LUZON,"230_01OLONGAP	",230
+01OLONGAP,LUZON,"69_01OLONGAP	",69
+01PAGUDPUD,LUZON,"115_01PAGUDPUD	",115
+01PAGUDPUD,LUZON,"35_01PAGUDPUD	",34.5
+01PANTABA,LUZON,"14_01PANTABA	",13.8
+01PANTABA,LUZON,"230_01PANTABA	",230
+01PASUQUIN,LUZON,"115_PASUQUIN	",115
+01PASUQUIN,LUZON,"35_PASUQUIN	",34.5
+01SBMA,LUZON,"230_01SBMA	",230
+01SBMA,LUZON,"69_01SBMA	",69
+01SBMA,LUZON,"14_01SBMA	",13.8
+01SBMA,LUZON,"35_01SUP	",69
+01SNESTBN,LUZON,"115_01SNESTBN	",115
+01SNESTBN,LUZON,"230_01SNESTBN	",230
+01SNESTBN,LUZON,"69_01SNESTBN	",69
+01SNMANUEL,LUZON,"69_01SNMANUEL	",69
+01SNMANUEL,LUZON,"230_01SNMANUEL	",230
+01SNMANUEL,LUZON,"35_01SNMANUEL	",34.5
+01SNMARCELINO,LUZON,"230_01SNMARCELINO	",230
+01SNMARCELINO,LUZON,"33_01SNMARCELINO	",33
+01SNRAFAEL,LUZON,"230_01SNRAFAEL	",230
+01SNRAFAEL,LUZON,"69_01SNRAFAEL	",69
+01SNROQUE,LUZON,"230_01SNROQUE	",230
+01SNROQUE,LUZON,"14_01SNROQUE	",13.8
+01SNTGO,LUZON,"230_01SNTGO	",230
+01SNTGO,LUZON,"69_01SNTGO	",69
+01SUAL,LUZON,"230_01SUAL	",230
+01SUAL,LUZON,"22_01SUAL	",22
+01T_ASIA,LUZON,"115_01T_ASIA	",115
+01T_ASIA,LUZON,"14_01T_ASIA	",13.8
+01TGEGARAO,LUZON,"69_01TGEGARAO	",69
+01TGEGARAO,LUZON,"230_01TGEGARAO	",230
+02DOLORES,LUZON,"230_02DOLORES	",230
+02DOLORES,LUZON,"115_02DOLORES	",115
+02DONAIMELDA,LUZON,"115_02DONAIMELDA	",115
+02DONAIMELDA,LUZON,"230_02DONAIMELDA	",230
+02MANILA,LUZON,"115_02MANILA	",115
+02MANILA,LUZON,"230_02MANILA	",230
+02MUNTINLUPA,LUZON,"230_02MUNTINLUPA	",230
+02MUNTINLUPA,LUZON,"115_02MUNTINLUPA	",115
+02QUEZON,LUZON,"115_02QUEZON	",115
+02QUEZON,LUZON,"230_02QUEZON	",230
+02ZAPOTE,LUZON,"115_02ZAPOTE	",115
+02ZAPOTE,LUZON,"230_02ZAPOTE	",230
+03AMADEO,LUZON,"230_03AMADEO	",230
+03AVION,LUZON,"230_03AVION	",230
+03AVION,LUZON,"14_03AVION	",13.8
+03BACMANGP,LUZON,"230_03BACMANGP	",230
+03BACMANGP,LUZON,"14_03BACMANGP	",13.8
+03BATANGAS,LUZON,"230_03BATANGAS	",230
+03BATANGAS,LUZON,"69_03BATANGAS	",69
+03BINAN,LUZON,"230_03BINAN	",230
+03BINAN,LUZON,"115_03BINAN	",115
+03CALAMBA,LUZON,"230_03CALAMBA	",230
+03CALAMBA,LUZON,"115_03CALAMBA	",115
+03CALAUAN,LUZON,"230_03CALAUAN	",230
+03CALAUAN,LUZON,"115_03CALAUAN	",115
+03CALIRAY,LUZON,"115_03CALIRAY	",115
+03CALIRAY,LUZON,"69_03CALIRAY	",69
+03CALIRAY,LUZON,"14_03CALIRAY	",13.8
+03CALIRAY,LUZON,"35_03CALIRAY	",34.5
+03CLACA,LUZON,"230_03CLACA	",230
+03CLACA,LUZON,"22_03CLACA	",22
+03CLACA,LUZON,"69_03CLACA	",69
+03CLACA,LUZON,"4_03CLACA	",4
+03DARAGA,LUZON,"69_03DARAGA	",69
+03DARAGA,LUZON,"230_03DARAGA	",230
+03DASMAEHV,LUZON,"115_03DASMAEHV	",115
+03DASMAEHV,LUZON,"500_03DASMAEHV	",500
+03DASMAEHV,LUZON,"230_03DASMAEHV	",230
+03EERI,LUZON,"20_03EERI	",20
+03EERI,LUZON,"500_03EERI	",500
+03GUMACA,LUZON,"230_03GUMACA	",230
+03GUMACA,LUZON,"69_03GUMACA	",69
+03ILIJAN,LUZON,"500_03ILIJAN	",500
+03ILIJAN,LUZON,"22_03ILIJAN	",22
+03INGRID,LUZON,"22_03INGRID	",22
+03INGRID,LUZON,"230_03INGRID	",230
+03LABO,LUZON,"69_03LABO	",69
+03LABO,LUZON,"230_03LABO	",230
+03LUMBAN,LUZON,"69_03LUMBAN	",69
+03LUMBAN,LUZON,"230_03LUMBAN	",230
+03LUMBAN,LUZON,"69_03TIBAGSS	",69
+03LUMBAN,LUZON,"69_03TIBAG	",69
+03MAUBAN,LUZON,"230_03MAUBAN	",230
+03MKBAN-A,LUZON,"69_03MKBAN-A	",69
+03MKBAN-A,LUZON,"230_03MKBAN-A	",230
+03MKBAN-A,LUZON,"14_03MKBAN-A	",13.8
+03MKBAN-B,LUZON,"230_03MKBAN-B	",230
+03MKBAN-B,LUZON,"14_03MKBAN-B	",13.8
+03MKBAN-C,LUZON,"14_03MKBAN-C	",13.8
+03MKBAN-C,LUZON,"230_03MKBAN-C	",230
+03MKBAN-D,LUZON,"230_03MKBAN-D	",230
+03MKBAN-D,LUZON,"14_03MKBAN-D	",13.8
+03MKBAN-D,LUZON,"1_03MKBAN-D	",1
+03MLAYA,LUZON,"1_03MLAYA	",1
+03MLAYA,LUZON,"115_03MLAYA	",115
+03MLAYA,LUZON,"21_03MLAYA	",21
+03MLAYA,LUZON,"230_03MLAYA	",230
+03NAGA,LUZON,"69_03NAGA	",69
+03NAGA,LUZON,"230_03NAGA	",230
+03PAGEHV,LUZON,"230_03PAGEHV	",230
+03PAGEHV,LUZON,"500_03PAGEHV	",500
+03PALAYAN,LUZON,"14_03PALAYN	",13.8
+03PALAYAN,LUZON,"230_03PALAYN	",230
+03PALAYAN,LUZON,"35_03BACBES	",34.5
+03PGBILAO,LUZON,"230_03PGBILAO	",230
+03PGBILAO,LUZON,"24_03PGBILAO	",24
+03SALONG,LUZON,"230_03SALONG	",230
+03SALONG,LUZON,"14_03SALONG	",13.8
+03SLPGC,LUZON,"14_03SLPGC	",13.8
+03SLPGC,LUZON,"230_03SLPGC	",230
+03SNJUAN,LUZON,"14_03SNJUAN	",13.8
+03SNJUAN,LUZON,"115_03SNJUAN	",115
+03SNJUAN,LUZON,"230_03SNJUAN	",230
+03STARITA,LUZON,"230_03STARITA	",230
+03STARITA,LUZON,"17_03STARITA	",16.5
+03STARITA,LUZON,"23_03STARITA	",22.8
+03STROSA,LUZON,"230_03STROSA	",230
+03STROSA,LUZON,"115_03STROSA	",115
+03TAYABEHV,LUZON,"115_03TAYABEHV	",115
+03TAYABEHV,LUZON,"230_03TAYABEHV	",230
+03TAYABEHV,LUZON,"500_03TAYABEHV	",500
+03TIWI-A,LUZON,"69_03TIWI-A	",69
+03TIWI-A,LUZON,"14_03TIWI-A	",13.8
+03TIWI-A,LUZON,"230_03TIWI-A	",230
+03TIWI-C,LUZON,"230_03TIWI-C	",230
+03TIWI-C,LUZON,"14_03TIWI-C	",13.8
+03TIWI-C,LUZON,"69_03TIWI-C	",69
+04BABATNGN,VISAYAS,"138_04BABATNGN	",138
+04BABATNGN,VISAYAS,"69_04BABATNGN	",69
+04CALBAYOG,VISAYAS,"138_04CALBAYOG	",138
+04CALBAYOG,VISAYAS,"6_04CLBYBNK	",6.3
+04CALBAYOG,VISAYAS,"69_04CALBAYOG	",69
+04CALBAYOG,VISAYAS,"69_04CLBYBNK	",69
+04CALBAYOG,VISAYAS,"69_04CLBYTAP	",69
+04CALBAYOG,VISAYAS,"69_04SNAGUSTIN	",69
+04ISABEL,VISAYAS,"138_04ISABEL	",138
+04ISABEL,VISAYAS,"69_04ISABEL	",69
+04KANANGA,VISAYAS,"230_04KANANGA	",230
+04MAASIN,VISAYAS,"138_04MAASIN	",138
+04MAASIN,VISAYAS,"69_04MAASIN	",69
+04ORMOC,VISAYAS,"138_04ORMOC	",138
+04ORMOC,VISAYAS,"230_04ORMOC	",230
+04ORMOC,VISAYAS,"69_04ORMOC	",69
+04PARANAS,VISAYAS,"138_04PARANAS	",138
+04PARANAS,VISAYAS,"14_04TFS	",13.8
+04PARANAS,VISAYAS,"6_04TAFT	",6.3
+04PARANAS,VISAYAS,"6_04UTH	",6.3
+04PARANAS,VISAYAS,"69_04PARANAS	",69
+04PARANAS,VISAYAS,"69_04SNISEDRO	",69
+04PARANAS,VISAYAS,"69_04SNRAFAEL	",69
+04PARANAS,VISAYAS,"69_04TAFT	",69
+04PARANAS,VISAYAS,"69_04TFS	",69
+04PARANAS,VISAYAS,"69_04TFT	",69
+04PARANAS,VISAYAS,"69_04UTH	",69
+04STARITA,VISAYAS,"138_04STARITA	",138
+04STARITA,VISAYAS,"69_04STARITA	",69
+04STARITATAP,VISAYAS,"138_04STARITATAP	",138
+04TABANGO,VISAYAS,"230_04ISIDROSOL	",230
+04TABANGO,VISAYAS,"230_04TABANGO	",230
+04TABANGO,VISAYAS,"35_04ISIDROSOL	",34.5
+04TABANGO,VISAYAS,"69_04TABANGO	",69
+04TONGONA,VISAYAS,"138_04TONGONA	",138
+04TONGONA,VISAYAS,"14_04TONGONA	",13.8
+04TONGONA,VISAYAS,"35_04TNBESS	",34.5
+04TONGONA,VISAYAS,"5_04TONGONA	",4.16
+05CALUNG,VISAYAS,"1_05CALUNG	",1
+05CALUNG,VISAYAS,"138_05CALUNG	",138
+05CALUNG,VISAYAS,"14_05CALUNG	",13.8
+05CALUNG,VISAYAS,"69_05CALUNG	",69
+05CEBU,VISAYAS,"138_05CEBU	",138
+05CEBU,VISAYAS,"230_05CEBU	",230
+05CEBU,VISAYAS,"69_05CEBU	",69
+05COLON,VISAYAS,"138_05COLON	",138
+05COLON,VISAYAS,"69_05NAGALES	",69
+05COLON,VISAYAS,"69_05NEWNAGA	",69
+05COMPSTLA,VISAYAS,"138_05COMPSTLA	",138
+05COMPSTLA,VISAYAS,"230_05COMPSTLA	",230
+05COMPSTLA,VISAYAS,"69_05COMPSTLA	",69
+05DAANBNTAY,VISAYAS,"230_05DAANBNTAY	",230
+05DAANBNTAY,VISAYAS,"69_05DAANBNTAY	",69
+05DAANLUNSOD,VISAYAS,"138_05DAANLUNSOD	",138
+05DAANLUNSOD,VISAYAS,"14_05DAANLUNSOD	",13.8
+05DUMANJUG,VISAYAS,"138_05DUMANJUG	",138
+05DUMANJUG,VISAYAS,"230_05ARGAO	",230
+05DUMANJUG,VISAYAS,"230_05DUMANJUG	",230
+05DUMANJUG,VISAYAS,"69_05DUMANJUG	",69
+05KSPC,VISAYAS,"138_05KSPC	",138
+05KSPC,VISAYAS,"14_05KSPC	",13.8
+05LAPULAPU,VISAYAS,"138_05LAPULAPU	",138
+05LAPULAPU,VISAYAS,"69_05LAPULAPU	",69
+05MAGDUGO,VISAYAS,"138_05MAGDUGO	",138
+05MAGDUGO,VISAYAS,"230_05MAGDUGO	",230
+05MAGDUGO,VISAYAS,"230_05TALAVERA	",230
+05MANDAUE,VISAYAS,"138_05MANDAUE	",138
+05MANDAUE,VISAYAS,"69_05MANDAUE	",69
+05NAGA,VISAYAS,"138_05NAGA	",138
+05NAGA,VISAYAS,"14_05NAGA	",13.8
+05NAGA,VISAYAS,"69_05NAGA	",69
+05QUIOT,VISAYAS,"138_05QUIOT	",138
+05QUIOT,VISAYAS,"69_05QUIOT	",69
+05SAMBOAN,VISAYAS,"138_05SAMBOAN	",138
+05SAMBOAN,VISAYAS,"69_05SAMBOAN	",69
+05THERMA,VISAYAS,"18_05THERMA	",18
+05THERMA,VISAYAS,"230_05THERMA	",230
+05TOLBESS,VISAYAS,"14_05TOLBESS	",13.8
+05TOLBESS,VISAYAS,"69_05TOLBESS	",69
+05TOLEDO,VISAYAS,"138_05TOLEDO	",138
+05TOLEDO,VISAYAS,"35_05TOLEDO	",34.5
+06AMLAN,VISAYAS,"138_06AMLAN	",138
+06AMLAN,VISAYAS,"69_06AMLAN	",69
+06BACOLOD,VISAYAS,"138_06BACOLOD	",138
+06BACOLOD,VISAYAS,"14_06BACOLOD	",13.8
+06BACOLOD,VISAYAS,"230_06BACOLOD	",230
+06BACOLOD,VISAYAS,"69_06BACOLOD	",69
+06BACOLOD,VISAYAS,"7_06BACOLOD	",6.9
+06CADIZ,VISAYAS,"138_06CADIZ	",138
+06CADIZ,VISAYAS,"230_06CADIZ	",230
+06CADIZ,VISAYAS,"69_06CADIZ	",69
+06CALATRAVA,VISAYAS,"230_06CALATRAVA	",230
+06CALATRAVA,VISAYAS,"230_06CTS	",230
+06CALATRAVA,VISAYAS,"35_06CSPP	",34.5
+06CALATRAVA,VISAYAS,"69_06CALATRAVA	",69
+06GAHIT,VISAYAS,"230_06CTS	",230
+06GAHIT,VISAYAS,"230_06GAHIT	",230
+06HELIOS,VISAYAS,"138_06HELIOS	",138
+06HELIOS,VISAYAS,"33_06HELIOS	",33
+06KABANKALAN,VISAYAS,"138_06KABANKALAN	",138
+06KABANKALAN,VISAYAS,"69_06KABANKALAN	",69
+06KBANBESS,VISAYAS,"138_06KBANBESS	",138
+06KBANBESS,VISAYAS,"14_06KBANBESS	",13.8
+06MABINAY,VISAYAS,"138_06MABINAY	",138
+06MABINAY,VISAYAS,"69_06MABINAY	",69
+06PGPP1,VISAYAS,"138_06PGPP1	",138
+06PGPP1,VISAYAS,"14_06PGPP1	",13.8
+06PGPP2,VISAYAS,"138_06PGPP2	",138
+06PGPP2,VISAYAS,"14_06PGPP2	",13.8
+06PGPP2,VISAYAS,"35_06SONEG	",34.5
+06SNCARLOS,VISAYAS,"69_06SACSL1	",69
+06SNCARLOS,VISAYAS,"69_06SACSL2	",69
+06SNCARLOS,VISAYAS,"69_06SACSUN	",69
+06SNCARLOS,VISAYAS,"69_06SCBIO	",69
+06SNCARLOS,VISAYAS,"69_06SNCARLOS	",69
+07CORELLA,VISAYAS,"138_07CORELLA	",138
+07CORELLA,VISAYAS,"230_07CORELLA	",230
+07CORELLA,VISAYAS,"230_07MARIBOJOC	",230
+07CORELLA,VISAYAS,"69_07CORELLA	",69
+07TAPAL,VISAYAS,"14_07TAPAL	",13.8
+07TAPAL,VISAYAS,"69_07TAPAL	",69
+07UBAY,VISAYAS,"138_07UBAY	",138
+07UBAY,VISAYAS,"14_07UBAY	",13.8
+07UBAY,VISAYAS,"69_07UBAY	",69
+08BANTAP,VISAYAS,"69_08BANTAP	",69
+08BAROTAC,VISAYAS,"138_08BAROTAC	",138
+08BAROTAC,VISAYAS,"230_08BAROTAC	",230
+08BAROTAC,VISAYAS,"69_08BAROTAC	",69
+08BVISTA,VISAYAS,"69_08BVISTA	",69
+08CONCEPCION,VISAYAS,"138_08CONCEPCION	",138
+08CONCEPCION,VISAYAS,"14_08CONCEPCION	",13.8
+08CONCEPCION,VISAYAS,"69_08CONCEPCION	",13.8
+08DINGLE,VISAYAS,"138_08DINGLE	",138
+08DINGLE,VISAYAS,"14_08DINGLE	",13.8
+08DINGLE,VISAYAS,"69_08DINGLE	",69
+08ILOILO1,VISAYAS,"138_08ILOILO1	",138
+08ILOILO1,VISAYAS,"14_08ILOILO1	",13.8
+08ILOILO1,VISAYAS,"18_08ILOILO1	",18
+08ILOILO1,VISAYAS,"4_08ILOILO1	",4
+08ILOILO1,VISAYAS,"69_08ILOILO1	",69
+08NABAS,VISAYAS,"138_08NABAS	",138
+08NABAS,VISAYAS,"69_08NABAS	",69
+08PANITAN,VISAYAS,"138_08PANITAN	",138
+08PANITAN,VISAYAS,"69_08PANITAN	",69
+08SNJOSE,VISAYAS,"138_08SNJOSE	",138
+08SNJOSE,VISAYAS,"69_08SNJOSE	",69
+08STBARBRA,VISAYAS,"1_08STBARBRA	",1
+08STBARBRA,VISAYAS,"138_08STBARBRA	",138
+08STBARBRA,VISAYAS,"14_08STBARBRA	",13.8
+08STBARBRA,VISAYAS,"69_08STBARBRA	",69
+09AUROR,MINDANAO,"138_09AUROR	",138
+09AUROR,MINDANAO,"69_09AUROR	",69
+09LALA,MINDANAO,"138_09LALA	",138
+09LALA,MINDANAO,"230_09LALA	",230
+09NAGA,MINDANAO,"138_09NAGA	",138
+09NAGA,MINDANAO,"69_09NAGA	",69
+09NAGA,MINDANAO,"14_09NAGA	",13.8
+09PITOG,MINDANAO,"138_09PITOG	",138
+09PITOG,MINDANAO,"69_09PITOG	",69
+09PITOG,MINDANAO,"14_09PITOG	",13.8
+09POLAN,MINDANAO,"138_09POLAN	",138
+09POLAN,MINDANAO,"69_09POLAN	",69
+09WMPC,MINDANAO,"138_09WMPC	",138
+09WMPC,MINDANAO,"14_09WMPC	",13.8
+09ZAMBO,MINDANAO,"138_09ZAMBO	",138
+09ZAMBO,MINDANAO,"69_09ZAMBO	",69
+09ZAMBO,MINDANAO,"14_09ZAMBO	",13.8
+09ZAMBO,MINDANAO,"1_09ZAMBO	",0.48
+09ZAMBO,MINDANAO,"35_09ZAMBO	",34.5
+10AGUS1,MINDANAO,"138_10AGUS1	",138
+10AGUS1,MINDANAO,"69_10AGUS1	",69
+10AGUS1,MINDANAO,"14_10AGUS1	",13.8
+10AGUS2,MINDANAO,"138_10AGUS2	",138
+10AGUS2,MINDANAO,"14_10AGUS2	",13.8
+10AGUS4,MINDANAO,"138_10AGUS4	",138
+10AGUS4,MINDANAO,"14_10AGUS4	",13.8
+10AGUS5,MINDANAO,"138_10AGUS5	",138
+10AGUS5,MINDANAO,"14_10AGUS5	",13.8
+10AGUS6,MINDANAO,"138_10AGUS6	",138
+10AGUS6,MINDANAO,"69_10AGUS6	",69
+10AGUS6,MINDANAO,"14_10AGUS6	",13.8
+10BALOI,MINDANAO,"138_10BALOI	",138
+10BALOI,MINDANAO,"69_10BALOI	",69
+10BALOI,MINDANAO,"230_10BALOI	",230
+10IDPP,MINDANAO,"138_10IDPP	",138
+10IDPP,MINDANAO,"14_10IDPP	",13.8
+10KAUSW,MINDANAO,"230_10KAUSW	",230
+10KAUSW,MINDANAO,"14_10KAUSW	",13.8
+10LGAIT,MINDANAO,"138_10LGAIT	",138
+10LGAIT,MINDANAO,"69_10LGAIT	",69
+11FDC,MINDANAO,"138_11FDC	",138
+11FDC,MINDANAO,"14_11FDC	",13.8
+11JASAA,MINDANAO,"138_11JASAA	",138
+11JASAA,MINDANAO,"69_11JASAA	",69
+11JASAA,MINDANAO,"13_11JASAA	",13.2
+11KIBAW,MINDANAO,"138_11KIBAW	",138
+11KIBAW,MINDANAO,"69_11KIBAW	",69
+11LAGUIN,MINDANAO,"230_11LAGUIN	",230
+11LAGUIN,MINDANAO,"138_11LAGUIN	",138
+11LAGUIN,MINDANAO,"69_11LAGUIN	",69
+11MANOL,MINDANAO,"14_11MANOL	",13.8
+11MANOL,MINDANAO,"138_11MANOL	",138
+11MANOL,MINDANAO,"69_11MANOL	",69
+11MARAM,MINDANAO,"138_11MARAM	",138
+11MARAM,MINDANAO,"69_11MARAM	",69
+11MARAM,MINDANAO,"14_11MARAM	",13.8
+11MARAM,MINDANAO,"230_11MARAM	",230
+11OPOL,MINDANAO,"138_11OPOL	",138
+11OPOL,MINDANAO,"69_11OPOL	",69
+11TAGOL,MINDANAO,"138_11TAGOL	",138
+11TAGOL,MINDANAO,"69_11TAGOL	",69
+11TAGOL,MINDANAO,"14_11TAGOL	",13.8
+11VILLA,MINDANAO,"138_11VILLA	",138
+11VILLA,MINDANAO,"69_11VILLA	",69
+11VILLA,MINDANAO,"230_11VILLA	",230
+11VILLA,MINDANAO,"13_11VILLA	",13.2
+12BISLI,MINDANAO,"138_12BISLI	",138
+12BISLI,MINDANAO,"69_12BISLI	",69
+12BUTUA,MINDANAO,"138_12BUTUA	",138
+12BUTUA,MINDANAO,"69_12BUTUA	",69
+12NASIP,MINDANAO,"138_12NASIP	",138
+12NASIP,MINDANAO,"69_12NASIP	",69
+12PLACE,MINDANAO,"138_12PLACE	",138
+12PLACE,MINDANAO,"69_12PLACE	",69
+12SFRAN,MINDANAO,"138_12SFRAN	",138
+12SFRAN,MINDANAO,"69_12SFRAN	",69
+12TM2,MINDANAO,"138_12TM2	",138
+12TM2,MINDANAO,"14_12TM2	",13.8
+13BUNAW,MINDANAO,"138_13BUNAW	",138
+13BUNAW,MINDANAO,"69_13BUNAW	",69
+13BUNAW,MINDANAO,"230_13BUNAW	",230
+13CULAM,MINDANAO,"69_13CULAM	",69
+13CULAM,MINDANAO,"230_13CULAM	",230
+13CULAM,MINDANAO,"14_13CULAM	",13.8
+13CULAM,MINDANAO,"13_13CULAM	",13.2
+13DAVAO,MINDANAO,"138_13DAVAO	",138
+13DAVAO,MINDANAO,"69_13DAVAO	",69
+13MACO,MINDANAO,"138_13MACO	",138
+13MACO,MINDANAO,"69_13MACO	",69
+13MACO,MINDANAO,"13_13MACO	",13.2
+13MATAN,MINDANAO,"138_13MATAN	",138
+13MATAN,MINDANAO,"69_13MATAN	",69
+13MATAN,MINDANAO,"230_13MATAN	",230
+13NABUN,MINDANAO,"138_13NABUN	",138
+13NABUN,MINDANAO,"69_13NABUN	",69
+13TM1,MINDANAO,"138_13TM1	",138
+13TM1,MINDANAO,"14_13TM1	",13.8
+13TORIL,MINDANAO,"138_13TORIL	",138
+13TORIL,MINDANAO,"14_13TORIL	",13.8
+13TORIL,MINDANAO,"230_13TORIL	",230
+13TORIL,MINDANAO,"69_13TORIL	",69
+14GENSA,MINDANAO,"138_14GENSA	",138
+14GENSA,MINDANAO,"69_14GENSA	",69
+14KAMAN,MINDANAO,"14_14KAMAN	",13.8
+14KAMAN,MINDANAO,"138_14KAMAN	",138
+14KIDAP,MINDANAO,"138_14KIDAP	",138
+14KIDAP,MINDANAO,"69_14KIDAP	",69
+14KIDAP,MINDANAO,"14_14KIDAP	",13.8
+14SULTA,MINDANAO,"138_14SULTA	",138
+14SULTA,MINDANAO,"69_14SULTA	",69
+14TACUR,MINDANAO,"138_14TACUR	",138
+14TACUR,MINDANAO,"69_14TACUR	",69
+EOF,,,\nEOF,,,`;
+        const csvGenerators = `RESOURCE NAME,DESCRIPTION,REGION NAME,STATION NAME,TRADING PARTICIPANT
+01ACNPC_G01,ACNPC Tarlac Biomass Plant,LUZON,01CNCEPCN,Asian Carbon Neutral Power Corp.
+01AGROSOL_G01,Agrosolis Solar Plant,LUZON,01CNCEPCN,"Agrosolis Renewable Energy, Inc."
+01AMBUK_U01,Ambuklao Hydro Electric Power Plant Unit 1,LUZON,01AMBKLAO,"SN Aboitiz Power - Benguet, Inc. "
+01AMBUK_U02,Ambuklao Hydro Electric Power Plant Unit 2,LUZON,01AMBKLAO,"SN Aboitiz Power - Benguet, Inc. "
+01AMBUK_U03,Ambuklao Hydro Electric Power Plant Unit 3,LUZON,01AMBKLAO,"SN Aboitiz Power - Benguet, Inc. "
+01AMPHAW_G01,Hedcor Hydro Electric Power Plant,LUZON,01LATRINI,"HEDCOR, Inc."
+01ANDA_G01,ANDA Coal-Fired Power Plant,LUZON,01MEXICO,Anda Power Corporation
+01ANGAT_A,Angat Hydro Electric Power Plant,LUZON,01ANGAT,Angat Hydropower Corporation
+01ANGAT_M,Angat Hydro Electric Power Plant,LUZON,01ANGAT,Angat Hydropower Corporation
+01APEC_G01,APEC Co-Generation Power Plant,LUZON,01MEXICO,Asia Pacific Energy Corporation
+01ARAYSOL_G01,Arayat-Mexico Solar Power Plant,LUZON,01MEXICO,"Greencore Power Solutions 3, Inc. "
+01ARAYSOL_G02,Arayat-Mexico Solar Power Plant,LUZON,01MEXICO,"Greencore Power Solutions 3, Inc. "
+01ARAYSOL_G03,Arayat 3A Solar Power Project,LUZON,01MEXICO,Citicore Solar Pampanga 1 Inc. 
+01ARESOL_G01,46.658MWP Armenia Solar Power Project (SPP),LUZON,01CNCEPCN,"RE Resources, Inc."
+01ARMSOL_G01,Arayat-Mexico Solar Power Plant,LUZON,01CNCEPCN,"Citicore Solar Tarlac 1, Inc."
+01BAKSIP_G01,Hedcor Hydro Electric Power Plant,LUZON,01LATRINI,"HEDCOR, Inc."
+01BAKUN_G01,Bakun Hydro Electric Power Plant,LUZON,01BAKUN,Northern Renewables Generation Corporation
+01BALSOL_G01,28MWp Hermosa Solar Power Project,LUZON,01HERMOSA,Solana Solar Alpha Inc. 
+01BALWIND_G01,Balaoi and Caunayan Wind Power ,LUZON,01LAOAG,Bayog Wind Power Corp.
+01BAUANG_GS1,Bauang Diesel Power Plant,LUZON,01BPPC,1590 Energy Corporation
+01BAUANG_GS2,Bauang Diesel Power Plant,LUZON,01BPPC,1590 Energy Corporation
+01BAUANG_GS3,Bauang Diesel Power Plant,LUZON,01BPPC,1590 Energy Corporation
+01BINENG_G01,Bineng Hydro Electric Power Plant,LUZON,01LATRINI,"HEDCOR, Inc."
+01BINENG_G03,Bineng 3 Hydroelectric Power Plant (HEPP),LUZON,01LATRINI,"Hedcor, Inc."
+01BINGA_U01,Binga Hydro Electric Power Plant Unit 1,LUZON,01BINGA,"SN Aboitiz Power - Benguet, Inc. "
+01BINGA_U02,Binga Hydro Electric Power Plant Unit 2,LUZON,01BINGA,"SN Aboitiz Power - Benguet, Inc. "
+01BINGA_U03,Binga Hydro Electric Power Plant Unit 3,LUZON,01BINGA,"SN Aboitiz Power - Benguet, Inc. "
+01BINGA_U04,Binga Hydro Electric Power Plant Unit 4,LUZON,01BINGA,"SN Aboitiz Power - Benguet, Inc. "
+01BONGSOL_G01,23.776 MWP Bongabon Solar Power Project,LUZON,01CBNTUAN,Greentech Solar Energy Inc.
+01BOSUNG_G01,Bosung Solar Power Plant,LUZON,01LAOAG,Bosung Solartec Inc.
+01BT2020_G01,Bataan 2020 RE Biomass Cogeneration Power Plant,LUZON,01HERMOSA,Bataan 2020 Power Ventures Inc.
+01BT2020_G02,Bataan 2020 RE Biomass Cogeneration Power Plant 2,LUZON,01HERMOSA,"Bataan 2020, Inc."
+01BTNSOL_G01,Morong Solar Power Plant,LUZON,01LIMAY,SPARC-Solar Powered Agri-Rural Communities Corporation
+01BTSOLEN_BAT,Bataan Solar Energy Inc.,LUZON,01LIMAY,Bataan Solar Energy Inc.
+01BTSOLEN_G01,Bataan Solar Power Plant  ,LUZON,01LIMAY,Bataan Solar Energy Inc.
+01BULSOL_G01,San Ildefonso Solar Power Plant,LUZON,01SNRAFAEL,"Citicore Solar Bulacan, Inc. "
+01BURGOS_G01,EDC Burgos Wind Power Plant,LUZON,01BURGOS,EDC Burgos Wind Power Corporation
+01BURGOS_G02,Burgos Solar Power Plant,LUZON,01LAOAG,Energy Development Corporation (additional facility)
+01BURGOS_G03,Burgos Solar Power Plant-Phase 2,LUZON,01LAOAG,Energy Development Corporation (additional facility)
+01BUTAO_G01,Butao Irrigation Drop Hydroelectric Power Project ,LUZON,01SNMANUEL,Mindoro Grid Corporation
+01CABSOL_G01,FCRV Solar Power Plant,LUZON,01CBNTUAN,First Cabanatuan Renewable Ventures Inc.
+01CAGBIO_G01,Cagayan Biomass,LUZON,01GAMU,Cagayan Biomass Energy Corporation
+01CAGYSOL_G01,133.464 MWp Cagayan North Solar Power Plant,LUZON,01TGEGARAO,Natures Renewable Energy Devt. (NAREDCO) Corporation
+01CALIBUNK_G01,"Angeles Industrial Park (SEZ), Bo. Calibutbut, Bacolor, Pampanga",LUZON,01MEXICO,"Angeles Power, Inc."
+01CAPAS_G01,11.040MW Capas Bunker C-Fired Diesel Power Plant,LUZON,01CNCEPCN,Supreme Power Corporation
+01CAPRIS_G01,Caparispisan Wind Power Plant,LUZON,01PAGUDPUD,North Luzon Renewable Energy Corporation
+01CAPRIS_G02,50MW Caparispisan II Wind Power (Phase 1),LUZON,01PAGUDPUD,Amihan Renewable Energy Corp.
+01CASECN_U01,Casecnan Hydroelectric Power Plant Unit 1,LUZON,01CASCNAN,Fresh River Lakes Corp.
+01CASECN_U02,Casecnan Hydroelectric Power Plant Unit 2,LUZON,01CASCNAN,Fresh River Lakes Corp.
+01CAYBSOL_G01,94.717 MWp Cayanga-Bugallon Solar Power Plant,LUZON,01CAYANGA,PV Sinag Power Inc.
+01CIP2_G01,CIP II Bunker C Fired Diesel Power Plant,LUZON,01BCNOTAN,CIP II Power Corporation
+01CLASOL_G01,Clark Solar Power Plant,LUZON,01CLARK,Citicore Renewable Energy Corporation
+01CLEANG_G01,Cleangreen Biomass Power Plant,LUZON,01HERMOSA,Cleangreen Energy Corporation
+01CNCEP_BAT,Concepcion Battery Energy Storage System ,LUZON,01CNCEPCN,SMGP BESS Power Inc. 
+01CONSOL_G01,Solar Philippines Tarlac Solar Plant,LUZON,01CNCEPCN,Solar Philippines Tarlac Corporation
+01CORDONSOL_G01,Cordon Solar Power Plant,LUZON,01SNTGO,Greenergy for Global Inc.
+01CURSOL_G02,Currimao Solar Power Plant,LUZON,01CURIMAO,Nuevo Solar Energy Corp.
+01DALSOL_G01,Dalayap Solar Power Plant,LUZON,01CNCEPCN,"Citicore Solar Tarlac 2, Inc."
+01DOMSOL_G01,Sto. Domingo Solar Power Plant (SDSPP),LUZON,01SNMANUEL,Sinocalan Solar Power Corp.
+01GAMU_BAT,(+/-) 40 MW Gamu Battery Energy Storage System (Backfeed Power Requirement) ,LUZON,01GAMU,SMGP BESS Power Inc.
+01GFII_G01,Isabela Bioethanol and Cogeneration Plant,LUZON,01GAMU,"Green Future Innovations, Inc."
+01GIFT_G01,GIFT Rice Husk Fired Power Plant,LUZON,01CBNTUAN,Green Innovations for Tomorrow Corporation
+01GIFT_G02,Talavera Biomass Power Plant,LUZON,01CBNTUAN,Green Innovations for Tomorrow Corporation
+01GIGSOL_G01,GIGASOL3 Palauig Solar Power Plant,LUZON,01BOTOLAN,"GIGASOL3, Inc."
+01GNPD_U01,GN Power Dinginin Unit 1,LUZON,01MARIVELES,GNPower Dinginin Ltd. Co. 
+01GNPD_U02,GN Power Dinginin Unit 2,LUZON,01MARIVELES,GNPower Dinginin Ltd. Co. 
+01GRGOLD_G01,Grass Gold Biomass Power Plant,LUZON,01CBNTUAN,Grassgold Renewable Energy Corporation
+01HYPGRN_G01,12 MW Hypergreen Biomass,LUZON,01DUHAT,HyperGreen Energy Corporation
+01IBEC_G01,Talavera Biomass Power Plant,LUZON,01SNTGO,Isabela Biomass Energy Corporation
+01IBULAO_G01,4.5 MW Ibulao Hydroelectric Power Project ,LUZON,01BYOMBNG,Hydrocore Corp.
+01IPOWER_G01,IPOWER Rice Husk Fired Power Plant,LUZON,01CBNTUAN,San Jose City I Power Corporation
+01IPOWER_G02,IPOWER Rice Husk Fired Power Plant Phase 2,LUZON,01CBNTUAN,San Jose City I Power Corporation
+01LAMAO_BAT,Lamao Battery Energy Storage System,LUZON,01LAMAO,SMGP BESS Power Inc. 
+01LAOSOL_G01,72.020 MWp Laoag Solar Power Plant (Phase 1),LUZON,01CAYANGA,PV Sinag Power Inc.
+01LASUER_U01,Isabela La Suerte Rice Mill,LUZON,01GAMU,Isabela La Suerte Rice Mill Corporation
+01LIMAY_BAT,Limay Battery Energy Storage System,LUZON,01LIMAY,SMGP BESS Power Inc. 
+01LIMAY_U01,Bataan Combined Cycle Power Plant A  GT Unit 1,LUZON,01BCCPP,"Panasia Energy, Inc."
+01LIMAY_U02,Bataan Combined Cycle Power Plant A  GT Unit 2,LUZON,01BCCPP,"Panasia Energy, Inc."
+01LIMAY_U03,Bataan Combined Cycle Power Plant A  GT Unit 3,LUZON,01BCCPP,"Panasia Energy, Inc."
+01LIMAY_U04,Bataan Combined Cycle Power Plant A  ST Unit 4,LUZON,01BCCPP,"Panasia Energy, Inc."
+01LIMAY_U05,Bataan Combined Cycle Power Plant B  GT Unit 5,LUZON,01BCCPP,"Panasia Energy, Inc."
+01LIMAY_U06,Bataan Combined Cycle Power Plant B  GT Unit 6,LUZON,01BCCPP,"Panasia Energy, Inc."
+01LIMAY_U07,Bataan Combined Cycle Power Plant B  GT Unit 7,LUZON,01BCCPP,"Panasia Energy, Inc."
+01LIMAY_U08,Bataan Combined Cycle Power Plant B  ST Unit 8,LUZON,01BCCPP,"Panasia Energy, Inc."
+01LIMSOL_G01,33.831 Limbauan Solar Power Project (Phase 2),LUZON,01TGEGARAO,BKS Green Energy Corp.
+01MAEC_G01,Currimao Solar Power Plant,LUZON,01CURIMAO,Mirae Asia Energy Corporation
+01MAGAPIT_BAT,Magapit Battery Energy Storage System (Backfeed Power Requirement) ,LUZON,01TGEGARAO,SMGP BESS Power Inc. 
+01MAGAT_BAT,Magat Battery Energy Storage System ,LUZON,01MAGAT,"SN Aboitiz Power - Magat, Inc. "
+01MAGAT_U01,Magat Hydro Electric Power Plant Unit 1,LUZON,01MAGAT,"SN Aboitiz Power - Magat, Inc. "
+01MAGAT_U02,Magat Hydro Electric Power Plant Unit 2,LUZON,01MAGAT,"SN Aboitiz Power - Magat, Inc. "
+01MAGAT_U03,Magat Hydro Electric Power Plant Unit 3,LUZON,01MAGAT,"SN Aboitiz Power - Magat, Inc. "
+01MAGAT_U04,Magat Hydro Electric Power Plant Unit 4,LUZON,01MAGAT,"SN Aboitiz Power - Magat, Inc. "
+01MANSOK_G01,3.240 MW Man-asok Hydroelectric Power Plant (HEPP),LUZON,01LATRINI,Benguet Electric Cooperative
+01MARIS_U01,Maris Mini-Hydro Electric Power Plant Unit 1,LUZON,01SNTGO,"SN Aboitiz Power - Magat, Inc."
+01MARIS_U02,Maris Mini-Hydro Electric Power Plant Unit 2,LUZON,01SNTGO,"SN Aboitiz Power - Magat, Inc."
+01MARSOL_G01,Mariveles Solar Power Plant,LUZON,01MARIVELES,"Citicore Solar Bataan, Inc."
+01MARVEL_G01,Mariveles Coal-Fired Power Plant Unit 1,LUZON,01MARIVELES,GNPower Mariveles Energy Center Ltd. Co.
+01MARVEL_G02,Mariveles Coal-Fired Power Plant Unit 2,LUZON,01MARIVELES,GNPower Mariveles Energy Center Ltd. Co.
+01MASIWA_G01,Masiway Hydro Electric Power Plant,LUZON,01CBNTUAN,First Gen Hydro Power Corporation
+01MATUNO_G01,3x2.887MW Matuno Hydro Power Plant,LUZON,01BYOMBNG,Matuno River Development Corporation
+01MEGASOL_G01,56.578 MWp Gamu Solar Power Project,LUZON,01GAMU,Megasol Energy 1 Inc.
+01MPGC_U01,Mariveles Coal-fired Thermal Power Plant,LUZON,01MPGC,Mariveles Power Generation Corporation
+01MPGC_U02,Mariveles Coal-fired Thermal Power Plant Unit 2,LUZON,01MPGC,Mariveles Power Generation Corporation
+01MPGC_U03,Mariveles Coal-fired Thermal Power Plant Unit 3,LUZON,01MPGC,Mariveles Power Generation Corporation 
+01MPGC_U04,Mariveles Coal-fired Thermal Power Plant Unit 4,LUZON,01MPGC,Mariveles Power Generation Corporation 
+01MSINLO_BAT,AES Masinloc Advancion Energy Storage Array,LUZON,01MSINLOC,Masinloc Power Co. Ltd.
+01MSINLO_G01,Masinloc Coal-Fired Thermal Power Plant Unit 1,LUZON,01MSINLOC,Masinloc Power Co. Ltd.
+01MSINLO_G02,Masinloc Coal-Fired Thermal Power Plant Unit 2,LUZON,01MSINLOC,Masinloc Power Co. Ltd.
+01MSINLO_G03,Masinloc Coal-Fired Thermal Power Plant Unit 3,LUZON,01MSINLOC,Masinloc Power Co. Ltd.
+01NIABAL_G01,NIA Baligatan Hydro Electric Power Plant,LUZON,01SNTGO,National Irrigation Administration
+01NMHC_G01,Irisan 1 Hydro Electric Power Plant,LUZON,01LATRINI,"HEDCOR, Inc."
+01NMHC_G03,Irisan 3 Hydro Electric Power Plant,LUZON,01LATRINI,"HEDCOR, Inc."
+01NUEVASOL_G01,42.900MWp Bongabon Solar Power Plant,LUZON,01CBNTUAN,Nuevasol Energy Corp.
+01NWIND_G01,NWPDC Wind Power Plant,LUZON,01LAOAG,Northwind Power Development Corporation
+01NWIND_G02,NWPDC Phase III Bangui Bay Wind Farm,LUZON,01LAOAG,Northwind Power Development Corporation
+01OLONGSOL_G01,221.082 MWp / 172.200 MWac Olongapo Solar Power Project (SPP)  Phase 1,LUZON,01CASTILEHV,AP Renewable Energy Corporation
+01PASQSOL_G01,Pasuquin Solar Power Plant  ,LUZON,01PASUQUIN,"Energy Logics Philippines, Inc."
+01PAVGSOL_G01,20.397 MWp Orion Solar Power Plant,LUZON,01LIMAY,"Pavi Green Bataan Renewable Energy, Inc."
+01PETRON_G01,Circulating Fluidized Bed Power Plant,LUZON,01BCCPP,Petron Corporation
+01PETSOL_G01,Tarlac Solar Power Plant,LUZON,01CNCEPCN,PetroSolar Corporation
+01PETSOL_G02,Tarlac Solar Power Plant,LUZON,01CNCEPCN,PetroSolar Corporation
+01PNTBNG_U01,Pantabangan Hydro Electric Power Plant Unit 1,LUZON,01PANTABA,First Gen Hydro Power Corporation
+01PNTBNG_U02,Pantabangan Hydro Electric Power Plant Unit 2,LUZON,01PANTABA,First Gen Hydro Power Corporation
+01RASLAG_G01,RASLAG Pampanga Solar Power Plant,LUZON,01MEXICO,RASLAG Corp.
+01RASLAG_G02,RASLAG II Solar Power Plant,LUZON,01MEXICO,RASLAG Corp.
+01RASLAG_G03,RASLAG III Solar PV Plant ,LUZON,01MEXICO,RASLAG Corp.
+01RASLAG_G04,36.646 MWp RASLAG IV Solar Power Project,LUZON,01MEXICO,RASLAG Corp.
+01S_ENRO_G01,Subic Diesel Power Plant,LUZON,01SBMA,One Subic Power Generation Corporation
+01SABANG_G01,Sabangan Hydroelectric Power Plant,LUZON,01LATRINI,"Hedcor Sabangan, Inc."
+01SAMLSOL_G01,Samal Solar Power Project Phase 1,LUZON,01HERMOSA,Samal Solar Renewable Energy Corp.
+01SANMIGSOL_G01,80.923MWp San Miguel Solar Power Project,LUZON,01SNRAFAEL,Powersource First Bulacan Solar Inc.
+01SHIZEN_G01,75.214 MWP Palauig Solar Power Project,LUZON,01BOTOLAN,Shizen Inc.
+01SJSOL_G01,19.613 MWp San Jose Solar Power Plant (SPP),LUZON,01CBNTUAN,San Jose Green Energy Corporation
+01SLANGN_G01,Sal-angan Hydro Electric Power Plant,LUZON,01LATRINI,"HEDCOR, Inc."
+01SMBELL_G01,Commonal-Uddiawan Hydropower Plant,LUZON,01BYOMBNG,Smith Bell Mini-Hydro Corporation
+01SMC_G01,SMC Limay Coal Power Plant,LUZON,01LAMAO,Limay Power Inc.
+01SMC_G02,SMC Limay Coal Power Plant Unit 2,LUZON,01LAMAO,Limay Power Inc.
+01SMC_G03,SMC Limay Coal Power Plant Unit 3,LUZON,01LAMAO,Limay Power Inc.
+01SMC_G04,SMC Limay Coal Power Plant Unit 4,LUZON,01LAMAO,Limay Power Inc.
+01SNMAN_BAT,San Manuel Battery Energy Storage System (BESS+B72),LUZON,01SNMANUEL,SMGP BESS Power Inc. 
+01SNMANSOL_G01,92.545 MW San Manuel Solar Power Plant,LUZON,01SNMANUEL,"RE Resources, Inc."
+01SNMARSOL_G01,384.71 MW San Marcelino Solar Power Project  ,LUZON,01SNMARCELINO,Santa Cruz Solar Energy Inc.
+01SPABUL_G01,San Rafael Solar Power Plant,LUZON,01SNRAFAEL,SPARC-Solar Powered Agri-Rural Communities Corporation
+01SROQUE_U01,San Roque Hydro Electric Power Plant Unit 1,LUZON,01SNROQUE,San Roque Hydropower Inc. 
+01SROQUE_U02,San Roque Hydro Electric Power Plant Unit 2,LUZON,01SNROQUE,San Roque Hydropower Inc. 
+01SROQUE_U03,San Roque Hydro Electric Power Plant Unit 3,LUZON,01SNROQUE,San Roque Hydropower Inc. 
+01SUAL_G01,Sual Coal-Fired Power Plant,LUZON,01SUAL,Sual Power Inc.
+01SUAL_G02,Sual Coal-Fired Power Plant,LUZON,01SUAL,Sual Power Inc.
+01SUBSOL_G01,Subic Solar Power Plant,LUZON,01SBMA,Jobin-SQM Inc.
+01SUPSOL_G01,72.128 MWp Subic New PV Power Plant Project,LUZON,01SBMA,Jobin-SQM Inc.
+01T_ASIA_G01,TAPGC Diesel Power Plant,LUZON,01T_ASIA,Bulacan Power Generation Corporation
+01TERASU_G01,TERASU Solar Power Plant,LUZON,01CNCEPCN,Terasu Energy Inc.
+01TPCBUNK_G01,18.6 MW Bunker C-Fired Diesel Power Plant,LUZON,01CNCEPCN,Tarlac Power Corporation
+01TRUSTBIO_G01,Biogas Power Plant (Phase 1) ,LUZON,01MEXICO,Trustpower Corporation
+01TRUSTSOL_G01,20.888 MWp Trust Solar Power Plant ,LUZON,01MEXICO,Trustpower Corporation
+01UPPC_G01,UPPC Co-generation Power Plant,LUZON,01MEXICO,"United Pulp and Paper Company, Inc."
+01VSGRIP_G01,VS Gripal Biomass Power Plant,LUZON,01CBNTUAN,VS Gripal Power Corporation
+01YHGRN_G01,Hermosa Solar Power Plant,LUZON,01HERMOSA,"YH Green Energy, Incorporated"
+01ZAMSOL_G01,Palauig Solar Power Plant,LUZON,01BOTOLAN,SPARC-Solar Powered Agri-Rural Communities Corporation
+02ECOPRK_G01,ECO Park Solar Plant,LUZON,02QUEZON,Ecopark Energy of Valenzuela Corp.
+02ECOTAGA_G01,ECOPARK Tagalag,LUZON,02QUEZON,Ecopark Energy of Valenzuela Corp.
+02MMPP_G01,MMPC Biomass Power Plant,LUZON,02QUEZON,Montalban Methane Power Corp.
+02PNGEA_G01,PGEP Payatas Biogas Plant,LUZON,02QUEZON,"Pangea Green Energy Philippines, Inc."
+02PNGYSOL_G01,Pinugay Solar Power Plant,LUZON,02DOLORES,"PH Renewables, Inc."
+02SMNRTH_G01,SM North EDSA Solar Power Project,LUZON,02QUEZON,"Solar Philippines Commercial Rooftop Projects, Inc."
+02TMOBIL_G01,Navotas Bunker C-Fired Diesel Power Plant - Mobile,LUZON,02QUEZON,"Therma Mobile, Inc."
+02TMOBIL_G02,Navotas Bunker C-Fired Diesel Power Plant  Mobile,LUZON,02QUEZON,ECO Park
+02TMOBIL_G03,Navotas Bunker C-Fired Diesel Power Plant  Mobile,LUZON,02QUEZON,"Therma Mobile, Inc."
+02TMOBIL_G04,Navotas Bunker C-Fired Diesel Power Plant - Mobile,LUZON,02QUEZON,ECO Park
+02VALSOL_G01,Valenzuela Solar Power Plant,LUZON,02QUEZON,"Valenzuela Solar Energy, Inc."
+03ADISOL_G01,Lian Solar Power Plant,LUZON,03CLACA,Absolut Distillers Inc.
+03ALMNOS_BAT1,Subplant 1 Alaminos Battery Energy Storage System,LUZON,03MKBAN-A,"GIGA ACE 4, Inc."
+03ALMNOS_BAT2,Subplant 2 Alaminos Battery Energy Storage System,LUZON,03MKBAN-A,"GIGA ACE 4, Inc."
+03AVION_U01,San Gabriel Avion Power Plant Unit 1,LUZON,03AVION,Prime Meridian PowerGen Corporation
+03AVION_U02,San Gabriel Avion Power Plant Unit 2,LUZON,03AVION,Prime Meridian PowerGen Corporation
+03AWOC_G01,Pililia Wind Farm Power Plant,LUZON,02DOLORES,Pililla Wind Power Corp. 
+03BACMAN_BAT,Bacman Battery Energy Storage System (BESS),LUZON,03PALAYAN,Energy Development Corporation (additional facility)
+03BACMAN_U01,Bacman Geothermal Power Plant,LUZON,03BACMANGP,Bac-Man Geothermal Inc.
+03BACMAN_U02,Bacman Geothermal Power Plant,LUZON,03BACMANGP,Bac-Man Geothermal Inc.
+03BACMAN_U03,Bacman Geothermal Power Plant,LUZON,03BACMANGP,Bac-Man Geothermal Inc.
+03BALUG_G01,Balugbog Mini Hydro Electric Power Plant,LUZON,03CALIRAY,Philippine Power and Development Company
+03BART_G01,Barit Hydro Electric Power Plant,LUZON,03NAGA,"People's Energy Services, Inc."
+03BBEC_G01,Rice Husk Fired Power Plant,LUZON,03NAGA,Bicol Biomass Energy Corporation
+03BOTOCA_G01,Botocan Hydro Electric Power Plant,LUZON,03CALIRAY,Power Sector Assets & Liabilities Management Corporation
+03CADPI_G01,CAPDI Biomass Power Plant,LUZON,03CLACA,Absolut Distillers Inc.
+03CALACA_G01,Calaca Coal-Fired Thermal Power Plant 1,LUZON,03CLACA,SEM-Calaca Power Corporation 
+03CALACA_G02,Calaca Coal-Fired Thermal Power Plant 2,LUZON,03CLACA,SEM-Calaca Power Corporation 
+03CALIRY_G01,Caliraya Hydro Electric Power Plant,LUZON,03CALIRAY,Power Sector Assets & Liabilities Management Corporation
+03CALSOL_G01,Calatagan Solar Farm,LUZON,03CLACA,Solar Philippines Calatagan Corporation
+03CLABSOL_G01,59.84 MW Calabanga,LUZON,03NAGA,"Calabanga Renewable Energy (CARE), Inc."
+03CLBATO_G01,Calibato Mini Hydro Electric Power Plant,LUZON,03CALAUAN,Philippine Power and Development Company
+03COLASI_G01,4.00MW Colasi Mini Hydroelectric Power Plant (MHEPP),LUZON,03LABO,COLASI MINI HYDRO ELECTRIC POWER PLANT CORPORATION
+03EERI_G01,Batangas Combined Cycle Power Plant Unit 1,LUZON,03EERI,Excellent Energy Resources Inc.
+03EERI_G02,Batangas Combined Cycle Power Plant Unit 2,LUZON,03EERI,Excellent Energy Resources Inc.
+03EERI_G03,Batangas Combined Cycle Power Plant Unit 3,LUZON,03EERI,Excellent Energy Resources Inc.
+03ILIJAN_G01,Ilijan Natural Gas Power Plant,LUZON,03ILIJAN,South Premiere Power Corporation
+03ILIJAN_G02,Ilijan Natural Gas Power Plant,LUZON,03ILIJAN,South Premiere Power Corporation
+03INARI_G01,Inarihan Hydroelectric Power Plant,LUZON,03NAGA,Bicol Hydropower Corporation
+03INGRID_GS1,Ingrid Diesel Power Plant,LUZON,03INGRID,"Ingrid Power Holdings, Inc. "
+03INGRID_GS2,Ingrid Diesel Power Plant,LUZON,03INGRID,"Ingrid Power Holdings, Inc. "
+03INGRID_GS3,Ingrid Diesel Power Plant,LUZON,03INGRID,"Ingrid Power Holdings, Inc. "
+03INGRID_GS4,Ingrid Diesel Power Plant,LUZON,03INGRID,"Ingrid Power Holdings, Inc. "
+03INGRID_GS5,Ingrid Diesel Power Plant,LUZON,03INGRID,"Ingrid Power Holdings, Inc. "
+03INGRID_GS6,Ingrid Diesel Power Plant,LUZON,03INGRID,"Ingrid Power Holdings, Inc. "
+03KAL_G01,Kalayaan Hydro Electric Power Plant,LUZON,03SNJUAN,Power Sector Assets & Liabilities Management Corporation
+03KAL_G02,Kalayaan Hydro Electric Power Plant,LUZON,03SNJUAN,Power Sector Assets & Liabilities Management Corporation
+03KAL_G03,Kalayaan Hydro Electric Power Plant,LUZON,03SNJUAN,Power Sector Assets & Liabilities Management Corporation
+03KAL_G04,Kalayaan Hydro Electric Power Plant,LUZON,03SNJUAN,Power Sector Assets & Liabilities Management Corporation
+03LMHP_G01,1.720 MW Laguio (laginbayan) Malakai 1 Hydropower Project,LUZON,03MAUBAN,"ENERVANTAGE SUPPLIERS CO., INC."
+03LUMBAN_BAT,57.125 MWh Lumban Battery Energy Storage System (BESS),LUZON,03LUMBAN,SMGP BESS Power Inc.
+03LUMBSOL_G01,125.211 MWp Lumbangan Solar Power Project,LUZON,03CLACA,"Citicore Solar Batangas 1, Inc."
+03LUNSOL_G01,72.007 MWp Luntal Solar Power Project,LUZON,03CLACA,"Citicore Solar Batangas 1, Inc."
+03LWERLAB_G01,Lower Labayat Hydroelectric Power Plant  ,LUZON,03LUMBAN,BEHMC Lower Labayat Hydropower Corp.
+03MAJAY_G01,Majayjay Hydro Electric Power Plant,LUZON,03CALIRAY,"Majayjay Hydropower Company, Inc."
+03MALAYA_G01,Malaya Oil Thermal Power Plant,LUZON,03MLAYA,Power Sector Assets & Liabilities Management Corporation
+03MALAYA_G02,Malaya Oil Thermal Power Plant,LUZON,03MLAYA,Belgrove Power Corporation
+03MARAGSOL_G01,64.206MWp/48.118MWac Maragondon Solar Power Plant,LUZON,03DASMAEHV,Prime Solar Solutions Corp.
+03MEC_G01,Majestics Energy Solar PV Plant,LUZON,03DASMAEHV,Majestics Energy Corporation
+03MGI_G02,Maibarara Geothermal Power Plant,LUZON,03CALAUAN,"Maibarara Geothermal, Inc."
+03MGPP_G01,Maibarara Geothermal Power Plant,LUZON,03CALAUAN,"Maibarara Geothermal, Inc."
+03MKBN_A,Makban Geothermal Power Plant A,LUZON,03MKBAN-A,AP Renewables Inc. 
+03MKBN_B,Makban Geothermal Power Plant B,LUZON,03MKBAN-B,AP Renewables Inc. 
+03MKBN_C,Makban Geothermal Power Plant C,LUZON,03MKBAN-C,AP Renewables Inc. 
+03MKBN_D,Makban Geothermal Power Plant D,LUZON,03MKBAN-D,AP Renewables Inc. 
+03MKBN_E,Makban Geothermal Power Plant E,LUZON,03MKBAN-A,AP Renewables Inc. 
+03NAICSOL_G01,Naic Rooftop Solar Power Project,LUZON,03DASMAEHV,Joy-Nostalg Solaris Incorporated
+03ORMAT_G01,Ormat-Makban Binary Geothermal Power Plant,LUZON,03MKBAN-A,AP Renewables Inc. 
+03PAGBIL_G01,Pagbilao Coal-Fired Power Plant,LUZON,03PGBILAO,"Therma Luzon, Inc. "
+03PAGBIL_G02,Pagbilao Coal-Fired Power Plant,LUZON,03PGBILAO,"Therma Luzon, Inc. "
+03PAGBIL_G03,Pagbilao 3 Power Plant,LUZON,03PGBILAO,Pagbilao Energy Corporation
+03PALAK_G01,Palakpakin Mini Hydro Electric Power Plant,LUZON,03CALAUAN,Philippine Power and Development Company
+03PALAYAN_G01,Palayan Binary Geothermal Power Plant ,LUZON,03PALAYAN,Bac-Man Geothermal Inc.
+03QPPL_G01,QPPL Coal-Fired Power Plant,LUZON,03MAUBAN,Quezon Power (Philippines) Ltd. Co.
+03RCBMI_G01,Batangas Diesel Power Plant Unit 1,LUZON,03BATANGAS,"Republic Cement & Building Materials, Inc."
+03RCBMI_G02,Batangas Diesel Power Plant Unit 2,LUZON,03BATANGAS,"Republic Cement & Building Materials, Inc."
+03SBPL_G01,San Buenaventura Power Plant,LUZON,03MAUBAN,San Buenaventura Power Ltd. Co.
+03SLPGC_G01,SLPGC CFB Coal-Fired Power Plant Unit 1,LUZON,03SLPGC,Southwest Luzon Power Generation Corporation
+03SLPGC_G02,SLPGC CFB Coal-Fired Power Plant Unit 2,LUZON,03SLPGC,Southwest Luzon Power Generation Corporation
+03SLTEC_G01,SLTEC CFB Coal-Fired Power Plant Unit 1,LUZON,03SALONG,South Luzon Thermal Energy Corporation
+03SLTEC_G02,SLTEC CFB Coal-Fired Power Plant Unit 2,LUZON,03SALONG,South Luzon Thermal Energy Corporation
+03SNGAB_G01,San Gabriel Power Plant,LUZON,03STARITA,First Natgas Power Corporation
+03SOLACE_G01,Solar Ace,LUZON,03MKBAN-A,SOLARACE1 Energy Corp. 
+03STA-RI_G01,Sta. Rita Natural Gas Power Plant,LUZON,03STARITA,First Gas Power Corporation (Sta Rita)
+03STA-RI_G02,Sta. Rita Natural Gas Power Plant,LUZON,03STARITA,First Gas Power Corporation (Sta Rita)
+03STA-RI_G03,Sta. Rita Natural Gas Power Plant,LUZON,03STARITA,First Gas Power Corporation (Sta Rita)
+03STA-RI_G04,Sta. Rita Natural Gas Power Plant,LUZON,03STARITA,First Gas Power Corporation (Sta Rita)
+03STA-RI_G05,San Lorenzo Natural Gas Power Plant,LUZON,03STARITA,FGP Corp.
+03STA-RI_G06,San Lorenzo Natural Gas Power Plant,LUZON,03STARITA,FGP Corp.
+03TANAWON_G01,21.573 MW Tanawon Geothermal Power Plant,LUZON,03PALAYAN,"Bac-Man Geothermal, Inc."
+03TANSOL_G01,64.206MWp/48.118MWac Tanauan Solar Power Plant,LUZON,03CALAMBA,Prime Solar Solutions Corp.
+03TGPP_G01,17MW Tiwi Geothermal Binary Power Plant,LUZON,03TIWI-C,AP Renewables Inc.
+03TIBAG_G01,Tibag Hydroelectric Power Plant  ,LUZON,03LUMBAN,Tibag Hydropower Corporation
+03TIWI_A,Tiwi Geothermal Power Plant A,LUZON,03TIWI-A,AP Renewables Inc. 
+03TIWI_C,Tiwi Geothermal Power Plant C,LUZON,03TIWI-C,AP Renewables Inc. 
+03UPLAB_G01,Upper Labayat Hydroelectric Power Plant,LUZON,03LUMBAN,Labayat 1 Hydropower Corporation  
+04BILGPP_G01,2.000 MW (Phase 1) Biliran Geothermal Power Plant Project,VISAYAS,04ORMOC,Biliran Geothermal Incorporated
+04CLBYBNK_G01,Calbayog Bunker C-Fired Diesel Power Plant  ,VISAYAS,04CALBAYOG,GT-Energy Corp.
+04IASMOD_G01,Isabel Ancillary Services Co. Sector 1,VISAYAS,04ISABEL,Isabel Ancillary Services Co. Ltd.
+04IASMOD_G02,Isabel Ancillary Services Co. Sector 2,VISAYAS,04ISABEL,Isabel Ancillary Services Co. Ltd.
+04IASMOD_G03,Isabel Ancillary Services Co. Sector 3,VISAYAS,04ISABEL,Isabel Ancillary Services Co. Ltd.
+04IASMOD_G04,Isabel Ancillary Services Co. Sector 4,VISAYAS,04ISABEL,Isabel Ancillary Services Co. Ltd.
+04IASMOD_G05,Isabel Ancillary Services Co. Sector 5,VISAYAS,04ISABEL,Isabel Ancillary Services Co. Ltd.
+04IASMOD_G06,Isabel Ancillary Services Co. Sector 6,VISAYAS,04ISABEL,Isabel Ancillary Services Co. Ltd.
+04ISIDROSOL_G01,120.003 MWp San Isidro Solar Power Project,VISAYAS,04TABANGO,San Isidro Solar Power Corp.
+04LEYTE_A,Leyte A,VISAYAS,04KANANGA,Energy Development Corporation
+04LGPP_G01,Tongonan Geothermal Power Plant,VISAYAS,04TONGONA,Green Core Geothermal Inc.
+04ORMOC_BAT,Ormoc Battery Energy Storage System,VISAYAS,04ORMOC,SMGP BESS Power Inc. 
+04PHSOL_G01,PSFLI Solar Power Plant,VISAYAS,04ORMOC,First Solar Energy Corp.
+04SEPSOL_G01,SEPALCO Solar Farm,VISAYAS,04ORMOC,"Sulu Electric Power and Light (Phils.), Inc."
+04TAFT_G01,Tubig Hydroelectric Power Plant,VISAYAS,04PARANAS,Taft Hydroenergy Corporation
+04TAFTSOL_G01,20.155  MWP / 17.500 MWAC Taft Solar Power Plant (SPP) ,VISAYAS,04PARANAS,Taft Solar Energy Corporation
+04TONGO_BAT,Tongonan Battery Energy Storage System,VISAYAS,04TONGONA,Energy Development Corporation (additional facility)
+04UTH_G01,14.160MW Upper Taft Hydroelectric Power Plant,VISAYAS,04PARANAS,"Iraya Ventures, Inc."
+05CARMENDPP_U01,Carmen Diesel Power Plant Unit 1,VISAYAS,05TOLEDO,Toledo Power Company
+05CARMENDPP_U02,Carmen Diesel Power Plant Unit 2,VISAYAS,05TOLEDO,Toledo Power Company
+05CARMENDPP_U03,Carmen Diesel Power Plant Unit 3,VISAYAS,05TOLEDO,Toledo Power Company
+05CARMENDPP_U04,Carmen Diesel Power Plant Unit 4,VISAYAS,05TOLEDO,Toledo Power Company
+05CEDC_U01,CEDC Coal-Fired Thermal Power Plant Unit 1,VISAYAS,05DAANLUNSOD,Cebu Energy Development Corporation
+05CEDC_U02,CEDC Coal-Fired Thermal Power Plant Unit 2,VISAYAS,05DAANLUNSOD,Cebu Energy Development Corporation
+05CEDC_U03,CEDC Coal-Fired Thermal Power Plant Unit 3,VISAYAS,05DAANLUNSOD,Cebu Energy Development Corporation
+05CPPC_U01,CPPC Bunker C-Fired Diesel Power Plant Unit 1 ,VISAYAS,05QUIOT,Meridian Power Inc.
+05CPPC_U02,CPPC Bunker C-Fired Diesel Power Plant Unit 2,VISAYAS,05QUIOT,Meridian Power Inc.
+05CPPC_U03,CPPC Bunker C-Fired Diesel Power Plant Unit 3,VISAYAS,05QUIOT,Meridian Power Inc.
+05CPPC_U04,CPPC Bunker C-Fired Diesel Power Plant Unit 4,VISAYAS,05QUIOT,Meridian Power Inc.
+05CPPC_U05,CPPC Bunker C-Fired Diesel Power Plant Unit 5,VISAYAS,05QUIOT,Meridian Power Inc.
+05CPPC_U06,CPPC Bunker C-Fired Diesel Power Plant Unit 6,VISAYAS,05QUIOT,Meridian Power Inc.
+05CPPC_U07,CPPC Bunker C-Fired Diesel Power Plant Unit 7,VISAYAS,05QUIOT,Meridian Power Inc.
+05CPPC_U08,CPPC Bunker C-Fired Diesel Power Plant Unit 8,VISAYAS,05QUIOT,Meridian Power Inc.
+05CPPC_U09,CPPC Bunker C-Fired Diesel Power Plant Unit 9,VISAYAS,05QUIOT,Meridian Power Inc.
+05CPPC_U10,CPPC Bunker C-Fired Diesel Power Plant Unit 10,VISAYAS,05QUIOT,Meridian Power Inc.
+05EAUC_U01,EAUC Bunker C-Fired Power Plant Unit 1 ,VISAYAS,05LAPULAPU,East Asia Utilities Corporation
+05EAUC_U02,EAUC Bunker C-Fired Power Plant Unit 2,VISAYAS,05LAPULAPU,East Asia Utilities Corporation
+05EAUC_U03,EAUC Bunker C-Fired Power Plant Unit 3,VISAYAS,05LAPULAPU,East Asia Utilities Corporation
+05EAUC_U04,EAUC Bunker C-Fired Power Plant Unit 4,VISAYAS,05LAPULAPU,East Asia Utilities Corporation
+05KSPC_G01,KSPC Coal Fired Thermal Power Plant Unit 1,VISAYAS,05KSPC,KEPCO SPC Power Corporation  
+05KSPC_G02,KSPC Coal Fired Thermal Power Plant Unit 2,VISAYAS,05KSPC,KEPCO SPC Power Corporation  
+05THVI_U01,Therma Visayas Coal Fired Power Plant Unit 1,VISAYAS,05THERMA,"Therma Visayas, Inc."
+05THVI_U02,Therma Visayas Coal Fired Power Plant Unit 2,VISAYAS,05THERMA,"Therma Visayas, Inc."
+05TOLEDO_BAT,Toledo Battery Energy Storage System,VISAYAS,05TOLBESS,SMGP BESS Power Inc. 
+05TOLSOL_G01,First Toledo Solar Power Plant,VISAYAS,05CALUNG,"Citicore Solar Cebu, Inc."
+05TPC_G01,Sangi Coal Fired Power Plant,VISAYAS,05TOLEDO,Toledo Power Company (TPC)
+05TPC_G02,TPC Sangi Coal-Fired Thermal Power Plant,VISAYAS,05TOLEDO,Toledo Power Company
+05TPVI_U01,Naga (TPVI) Diesel Power Plant Unit 1,VISAYAS,05NAGA,"Therma Power-Visayas, Inc."
+05TPVI_U02,Naga (TPVI) Diesel Power Plant Unit 2,VISAYAS,05NAGA,"Therma Power-Visayas, Inc."
+05TPVI_U03,Naga (TPVI) Diesel Power Plant Unit 3,VISAYAS,05NAGA,"Therma Power-Visayas, Inc."
+05TPVI_U04,Naga (TPVI) Diesel Power Plant Unit 4,VISAYAS,05NAGA,"Therma Power-Visayas, Inc."
+05TPVI_U05,Naga (TPVI) Diesel Power Plant Unit 5,VISAYAS,05NAGA,"Therma Power-Visayas, Inc."
+05TPVI_U06,Naga (TPVI) Diesel Power Plant Unit 6,VISAYAS,05NAGA,"Therma Power-Visayas, Inc."
+06AMLA_G01,Amlan Hydro Electric Power Plant,VISAYAS,06AMLAN,Amlan Hydroelectric Power Corporation
+06BBGPP_G01,Bago Binary Geothermal Power Plant,VISAYAS,06BACOLOD,Energy Development Corporation (additional facility)
+06BISCOM_G01,BISCOM Biomass Cogeneration Plant,VISAYAS,06KABANKALAN,"BISCOM, Inc."
+06CABI_G01,Central Azucarera De Bais,VISAYAS,06AMLAN,"Central Azucarera de Bais, Inc. "
+06CALASOL_G01,137.400 MWAC Calatrava Solar Power Project (SPP),VISAYAS,06CALATRAVA,"Aboitiz Solar Power, Inc."
+06CARSOL_G01,Islasol II Solar Power Plant,VISAYAS,06BACOLOD,Negros Island Solar Power Inc.
+06CENPRI_U01,Calumangan Diesel Power Plant Unit 1,VISAYAS,06BACOLOD,"Central Negros Power Reliability, Inc."
+06CENPRI_U02,Calumangan Diesel Power Plant Unit 2,VISAYAS,06BACOLOD,"Central Negros Power Reliability, Inc."
+06CENPRI_U03,Calumangan Diesel Power Plant Unit 3,VISAYAS,06BACOLOD,"Central Negros Power Reliability, Inc."
+06CENPRI_U04,Calumangan Diesel Power Plant Unit 4,VISAYAS,06BACOLOD,"Central Negros Power Reliability, Inc."
+06CENPRI_U05,Calumangan Diesel Power Plant Unit 5,VISAYAS,06BACOLOD,"Central Negros Power Reliability, Inc."
+06FFHC_G01,FFHC Co-Generation Bagasse-Fired Power Plant,VISAYAS,06CADIZ,First Farmers Holding Corporation
+06HELIOS_G01,Cadiz Solar Farm,VISAYAS,06HELIOS,Helios Solar Energy Corporation
+06HPCO_G01,HPCO-Cogeneration Biomass Power Plant Unit 1,VISAYAS,06BACOLOD,Hawaiian-Philippine Company
+06HPCO_G02,HPCO-Cogeneration Biomass Power Plant Unit 2,VISAYAS,06BACOLOD,Hawaiian-Philippine Company
+06KABAN_BAT,Kabankalan Battery Energy Storage System,VISAYAS,06KBANBESS,SMGP Kabankalan Power Co. Ltd.
+06MANSOL_G01,Islasol III Solar Power Plant,VISAYAS,06CADIZ,Negros Island Solar Power Inc.
+06MNTSOL_G01,Bais Solar Power Plant,VISAYAS,06AMLAN,"Monte Solar Energy, Inc."
+06NASULO_G01,Nasulo Geothermal Power Plant,VISAYAS,06PGPP2,Energy Development Corporation
+06NTNEGB_G01,Northern Negros Bio Power,VISAYAS,06CADIZ,"North Negros Biopower, Inc."
+06PAL1A_G01,Palinpinon Geothermal Power Plant I,VISAYAS,06PGPP1,"Green Core Geothermal, Inc."
+06PAL1A_U01,112.500 MW Palinpinon-1 Geothermal Power Plant  (PGPP1) Unit 1,VISAYAS,06PGPP1,"Green Core Geothermal, Inc."
+06PAL1A_U02,112.500 MW Palinpinon-1 Geothermal Power Plant  (PGPP1) Unit 2,VISAYAS,06PGPP1,"Green Core Geothermal, Inc."
+06PAL1A_U03,112.500 MW Palinpinon-1 Geothermal Power Plant  (PGPP1) Unit 3,VISAYAS,06PGPP1,"Green Core Geothermal, Inc."
+06PAL2A_U01,Palinpinon Geothermal Power Plant II - Sogongon 1,VISAYAS,06PGPP2,"Green Core Geothermal, Inc."
+06PAL2A_U02,Palinpinon Geothermal Power Plant II - Sogongon 2,VISAYAS,06PGPP2,"Green Core Geothermal, Inc."
+06PAL2A_U03,Palinpinon Geothermal Power Plant II - Okoy 5,VISAYAS,06PGPP2,"Green Core Geothermal, Inc."
+06PAL2A_U04,Palinpinon Geothermal Power Plant II - Nasuji,VISAYAS,06PGPP2,"Green Core Geothermal, Inc."
+06SACASL_G01,Phase 1A & 1B Solar Power Plant,VISAYAS,06SNCARLOS,San Carlos Solar Energy Inc.
+06SACASL_G02,Phase 1 C & D Solar Power Plant,VISAYAS,06SNCARLOS,San Carlos Solar Energy Inc.
+06SACSUN_G01,San Carlos Sun Power Solar Plant,VISAYAS,06SNCARLOS,San Carlos Sun Power Inc.
+06SCBE_G01,Bagasse-Fired Cogeneration Power Plant,VISAYAS,06CADIZ,"San Carlos Bioenergy, Inc."
+06SCBIOP_G01,San Carlos Biomass Power Plant,VISAYAS,06SNCARLOS,San Carlos Biopower Inc.
+06SLYSOL_G01,Silay Solar Power Plant,VISAYAS,06BACOLOD,"Citicore Solar Negros Occidental, Inc. "
+06SONEG_BAT,14.535 MWh Southern Negros Battery Energy Storage System,VISAYAS,06PGPP2,Energy Development Corporation (additional facility)
+06STNEGB_G01,Southern Negros Bio Power,VISAYAS,06BACOLOD,"South Negros Biopower, Inc."
+06URC_G01,URC Bagasse-Fired Biomass Power Plant,VISAYAS,06MABINAY,Universal Robina Corporation
+06VISTASOL_G01,65.012 MWP Vista Alegre Solar Power Project (SPP),VISAYAS,06BACOLOD,Amatera Renewable Energy Corporation
+06VMC_G01,VMC Thermal (Biomass) Power Plant,VISAYAS,06CADIZ,"Victorias Milling Company,Inc."
+06VMC_G02,VMC Thermal (Biomass) Power Plant,VISAYAS,06BACOLOD,"Victorias Milling Company,Inc."
+07BDPP_U01,Bohol Diesel Power Plant Unit 1,VISAYAS,07CORELLA,SPC Island Power Corporation
+07BDPP_U02,Bohol Diesel Power Plant Unit 2,VISAYAS,07CORELLA,SPC Island Power Corporation
+07BDPP_U03,Bohol Diesel Power Plant Unit 3,VISAYAS,07CORELLA,SPC Island Power Corporation
+07BDPP_U04,Bohol Diesel Power Plant Unit 4,VISAYAS,07CORELLA,SPC Island Power Corporation
+07BIDPP_G01,Bohol In-Island Diesel Power Plant,VISAYAS,07UBAY,Conal Holdings Corporation
+07DAGSOL_G01,27.121 MWp Dagohoy Solar Power Project,VISAYAS,07UBAY,Dagohoy Green Energy Corporation
+07JANOPO_G01,Janopol Mini Hydro Power Plant,VISAYAS,07CORELLA,"Bohol I Electric Cooperative, Inc. - Janopol Mini Hydro Power Corporation"
+07LOBOC_G01,Loboc Hydro Electric Power Plant,VISAYAS,07CORELLA,Sta Clara Power Corporation 
+07LOBOC_G02,Loboc Hydro Electric Power Plant 2,VISAYAS,07CORELLA,Sta Clara Power Corporation 
+07SEVILL_G01,BOHECO 1 Sevilla Mini Hydro Corporation,VISAYAS,07CORELLA,BOHECO I  Sevilla Mini Hydro Corp.
+07TPLPB4_U01,Power Barge 104 Unit 1,VISAYAS,07TAPAL,SPC Power Corporation
+07TPLPB4_U02,Power Barge 104 Unit 2,VISAYAS,07TAPAL,SPC Power Corporation
+07TPLPB4_U03,Power Barge 104 Unit 3,VISAYAS,07TAPAL,SPC Power Corporation
+07TPLPB4_U04,Power Barge 104 Unit 4,VISAYAS,07TAPAL,SPC Power Corporation
+07UBAY_BAT,Ubay Battery Energy Storage System,VISAYAS,07UBAY,SMGP BESS Power Inc. 
+08CASA_G01,CASA Biomas Co-Generation Power Plant,VISAYAS,08DINGLE,Central Azucarera de San Antonio
+08CASA_G02,8.000 MW (Unit 2) Biomass Co-Generation Power Plant,VISAYAS,08DINGLE,Central Azucarera de San Antonio
+08COSMO_G01,Cosmo Solar Power Plant,VISAYAS,08SNJOSE,"Cosmo Solar Energy, Inc."
+08NABASDPP_U01,PPC3 Nabas Unit 1,VISAYAS,08NABAS,Panay Power Corporation
+08NABASDPP_U02,PPC3 Nabas Unit 2,VISAYAS,08NABAS,Panay Power Corporation
+08PALM_G01,135 MW CIRCULATING FLUIDIZED ED COMBUSTION COAL-FIRED POWER PLANT,VISAYAS,08CONCEPCION,Palm Concepcion Power Corporation
+08PDPP1_U02,Panay Diesel Power Plant  1 (Unit 2),VISAYAS,08DINGLE,SPC Island Power Corporation
+08PDPP1_U03,Panay Diesel Power Plant  1 (Unit 3),VISAYAS,08DINGLE,SPC Island Power Corporation
+08PDPP1_U05,Panay Diesel Power Plant  1 (Unit 5),VISAYAS,08DINGLE,SPC Island Power Corporation
+08PDPP3_C,Panay Diesel Power Plant  3 (Unit Charlie),VISAYAS,08DINGLE,SPC Island Power Corporation
+08PDPP3_E,Panay Diesel Power Plant  3 (Unit Echo),VISAYAS,08DINGLE,SPC Island Power Corporation
+08PDPP3_G,Panay Diesel Power Plant  3 (Unit Golf),VISAYAS,08DINGLE,SPC Island Power Corporation
+08PDPP3_H,Panay Diesel Power Plant  3 (Unit Hotel),VISAYAS,08DINGLE,SPC Island Power Corporation
+08PEDC_U01,PEDC Coal-Fired Thermal Power Plant Unit 1,VISAYAS,08ILOILO1,Panay Energy Development Corporation
+08PEDC_U02,PEDC Coal-Fired Thermal Power Plant Unit 2,VISAYAS,08ILOILO1,Panay Energy Development Corporation
+08PEDC_U03,PEDC Coal-Fired Thermal Power Plant Unit 3,VISAYAS,08ILOILO1,Panay Energy Development Corporation
+08PWIND_G01,PWEI Nabas Wind Power Plant,VISAYAS,08NABAS,PetroWind Energy Inc.
+08PWIND_G02,13.200 Nabas Wind Power Plant Phase 2 (Nabas-2),VISAYAS,08NABAS,PetroWind Energy Inc.
+08SLWIND_G01,San Lorenzo Wind Power Plant,VISAYAS,08BVISTA,Guimaras Wind Corporation
+08STBPB1_U01,Power Barge 101- Unit 1,VISAYAS,08STBARBRA,MORE Power Barge Inc.
+08STBPB1_U02,Power Barge 101- Unit 2,VISAYAS,08STBARBRA,MORE Power Barge Inc.
+08STBPB1_U03,Power Barge 101- Unit 3,VISAYAS,08STBARBRA,MORE Power Barge Inc.
+08STBPB1_U04,Power Barge 101- Unit 4,VISAYAS,08STBARBRA,MORE Power Barge Inc.
+08SUWECO_G01,Villasiga 1 Hydropower Plant,VISAYAS,08STBARBRA,"Sunwest Water and Electric Company 2, Inc."
+08TIMBA_G01,Timbaban Hydro Power Plant,VISAYAS,08NABAS,Oriental Energy & Power Generation Corp.
+09JIMDSL_U01,Jimenez Misamis Occidental Power Plant 3 Unit 1,MINDANAO,09AUROR,King Energy Generation Inc. - Jimenez
+09JIMDSL_U02,Jimenez Misamis Occidental Power Plant 3 Unit 2,MINDANAO,09AUROR,King Energy Generation Inc. - Jimenez
+09LIBPOWR_G01,6 MW Biomass Power Plant,MINDANAO,09AUROR,Libertad Power and Energy Corporation
+09PANABNK_U01,Misamis Occidental Bunker C-Fired Power Plant 2 Unit 1,MINDANAO,09AUROR,King Energy Generation Inc. -Panaon
+09PANABNK_U02,Misamis Occidental Bunker C-Fired Power Plant 2 Unit 2,MINDANAO,09AUROR,King Energy Generation Inc. -Panaon
+09SANGALI_BAT,22.928 Sangali Battery Energy Storage System (BESS),MINDANAO,09ZAMBO,"Fort Pilar Energy, Inc. "
+09WMPC_U01,112 MW Bunker-C Fired Diesel Power Plant Unit 1,MINDANAO,09WMPC,Western Mindanao Power Corporation
+09WMPC_U02,112 MW Bunker-C Fired Diesel Power Plant Unit 2,MINDANAO,09WMPC,Western Mindanao Power Corporation
+09WMPC_U03,112 MW Bunker-C Fired Diesel Power Plant Unit 3,MINDANAO,09WMPC,Western Mindanao Power Corporation
+09WMPC_U04,112 MW Bunker-C Fired Diesel Power Plant Unit 4,MINDANAO,09WMPC,Western Mindanao Power Corporation
+09WMPC_U05,112 MW Bunker-C Fired Diesel Power Plant Unit 5,MINDANAO,09WMPC,Western Mindanao Power Corporation
+09WMPC_U06,112 MW Bunker-C Fired Diesel Power Plant Unit 6,MINDANAO,09WMPC,Western Mindanao Power Corporation
+09WMPC_U07,112 MW Bunker-C Fired Diesel Power Plant Unit 7,MINDANAO,09WMPC,Western Mindanao Power Corporation
+09WMPC_U08,112 MW Bunker-C Fired Diesel Power Plant Unit 8,MINDANAO,09WMPC,Western Mindanao Power Corporation
+09WMPC_U09,112 MW Bunker-C Fired Diesel Power Plant Unit 9,MINDANAO,09WMPC,Western Mindanao Power Corporation
+09WMPC_U10,112 MW Bunker-C Fired Diesel Power Plant Unit 10,MINDANAO,09WMPC,Western Mindanao Power Corporation
+10AGUS1_U01,80.46 MW Agus I Hydroelectric Power Plant Unit 1,MINDANAO,10AGUS1,Power Sector Assets & Liabilities Management Corporation
+10AGUS1_U02,80.46 MW Agus I Hydroelectric Power Plant Unit 2,MINDANAO,10AGUS1,Power Sector Assets & Liabilities Management Corporation
+10AGUS2_U01,180 MW Agus II Hydroelectric Power Plant Unit 1,MINDANAO,10AGUS2,Power Sector Assets & Liabilities Management Corporation
+10AGUS2_U02,180 MW Agus II Hydroelectric Power Plant Unit 2,MINDANAO,10AGUS2,Power Sector Assets & Liabilities Management Corporation
+10AGUS2_U03,180 MW Agus II Hydroelectric Power Plant Unit 3,MINDANAO,10AGUS2,Power Sector Assets & Liabilities Management Corporation
+10AGUS4_U01,158.10 MW Agus IV Hydroelectric Power Plant Unit 1,MINDANAO,10AGUS4,Power Sector Assets & Liabilities Management Corporation
+10AGUS4_U02,158.10 MW Agus IV Hydroelectric Power Plant Unit 2,MINDANAO,10AGUS4,Power Sector Assets & Liabilities Management Corporation
+10AGUS4_U03,158.10 MW Agus IV Hydroelectric Power Plant Unit 3,MINDANAO,10AGUS4,Power Sector Assets & Liabilities Management Corporation
+10AGUS5_U01,55.25 MW Agus V Hydroelectric Power Plant Unit 1,MINDANAO,10AGUS5,Power Sector Assets & Liabilities Management Corporation
+10AGUS5_U02,55.25 MW Agus V Hydroelectric Power Plant Unit 2,MINDANAO,10AGUS5,Power Sector Assets & Liabilities Management Corporation
+10AGUS6_U01,219 MW Agus VI Hydroelectric Power Plant Unit 1,MINDANAO,10AGUS6,Power Sector Assets & Liabilities Management Corporation
+10AGUS6_U02,219 MW Agus VI Hydroelectric Power Plant Unit 2,MINDANAO,10AGUS6,Power Sector Assets & Liabilities Management Corporation
+10AGUS6_U03,219 MW Agus VI Hydroelectric Power Plant Unit 3,MINDANAO,10AGUS6,Power Sector Assets & Liabilities Management Corporation
+10AGUS6_U04,219 MW Agus VI Hydroelectric Power Plant Unit 4,MINDANAO,10AGUS6,Power Sector Assets & Liabilities Management Corporation
+10AGUS6_U05,219 MW Agus VI Hydroelectric Power Plant Unit 5,MINDANAO,10AGUS6,Power Sector Assets & Liabilities Management Corporation
+10AGUS7_U01,54 MW Agus VII Hydroelectric Power Plant Unit 1,MINDANAO,10AGUS6,Power Sector Assets & Liabilities Management Corporation
+10AGUS7_U02,54 MW Agus VII Hydroelectric Power Plant Unit 2,MINDANAO,10AGUS6,Power Sector Assets & Liabilities Management Corporation
+10GNPK_U01,GNPK's Coal Fired Power Plant Unit 1,MINDANAO,10KAUSW,GNPower Kauswagan Ltd. Co.
+10GNPK_U02,GNPK's Coal Fired Power Plant Unit 2,MINDANAO,10KAUSW,GNPower Kauswagan Ltd. Co.
+10GNPK_U03,GNPK's Coal Fired Power Plant Unit 3,MINDANAO,10KAUSW,GNPower Kauswagan Ltd. Co.
+10GNPK_U04,GNPK's Coal Fired Power Plant Unit 4,MINDANAO,10KAUSW,GNPower Kauswagan Ltd. Co.
+10IDP1_U01,69.600 MW Iligan Diesel Power Plant Unit 1,MINDANAO,10IDPP,Mapalad Power Corporation
+10IDP1_U02,69.600 MW Iligan Diesel Power Plant Unit 2,MINDANAO,10IDPP,Mapalad Power Corporation
+10IDP1_U03,69.600 MW Iligan Diesel Power Plant Unit 3,MINDANAO,10IDPP,Mapalad Power Corporation
+10IDP1_U04,69.600 MW Iligan Diesel Power Plant Unit 4,MINDANAO,10IDPP,Mapalad Power Corporation
+10IDP1_U05,69.600 MW Iligan Diesel Power Plant Unit 5,MINDANAO,10IDPP,Mapalad Power Corporation
+10IDP1_U06,69.600 MW Iligan Diesel Power Plant Unit 6,MINDANAO,10IDPP,Mapalad Power Corporation
+10IDP1_U07,69.600 MW Iligan Diesel Power Plant Unit 7,MINDANAO,10IDPP,Mapalad Power Corporation
+10IDP1_U08,69.600 MW Iligan Diesel Power Plant Unit 8,MINDANAO,10IDPP,Mapalad Power Corporation
+10IDP1_U09,69.600 MW Iligan Diesel Power Plant Unit 9,MINDANAO,10IDPP,Mapalad Power Corporation
+10IDP1_U10,69.600 MW Iligan Diesel Power Plant Unit 10,MINDANAO,10IDPP,Mapalad Power Corporation
+10IDP1_U11,69.600 MW Iligan Diesel Power Plant Unit 11,MINDANAO,10IDPP,Mapalad Power Corporation
+10IDP1_U12,69.600 MW Iligan Diesel Power Plant Unit 12,MINDANAO,10IDPP,Mapalad Power Corporation
+10IDP2_U01,Iligan Diesel Power Plant Unit 1,MINDANAO,10IDPP,Mapalad Power Corporation
+10IDP2_U02,Iligan Diesel Power Plant Unit 2,MINDANAO,10IDPP,Mapalad Power Corporation
+10IDP2_U03,Iligan Diesel Power Plant Unit 3,MINDANAO,10IDPP,Mapalad Power Corporation
+10IDP2_U04,Iligan Diesel Power Plant Unit 4,MINDANAO,10IDPP,Mapalad Power Corporation
+10IDP2_U05,Iligan Diesel Power Plant Unit 5,MINDANAO,10IDPP,Mapalad Power Corporation
+10IDP2_U06,Iligan Diesel Power Plant Unit 6,MINDANAO,10IDPP,Mapalad Power Corporation
+10IDP2_U07,Iligan Diesel Power Plant Unit 7,MINDANAO,10IDPP,Mapalad Power Corporation
+10IDPP_G01,114.40 MW Iligan Diesel Power Plant Units 1-19,MINDANAO,10IDPP,Mapalad Power Corporation
+10LIAN_G01,Liangan Hydroelectric Power Project,MINDANAO,10AGUS6,Liangan Power Corporation
+10MEGC_G01,MEGC Diesel Fired Bunker C Power Plant Unit 1 &2,MINDANAO,10AGUS6,Mapalad Energy Generating Corporation
+10PPEI_U01,25 MW CFB Coal-Fired Thermal Power Plant,MINDANAO,10AGUS6,PowerSource Philippines Energy Incorporated
+11CRYSSUG_G01,14.9MW Biomass Cogeneration Plant,MINDANAO,11MARAM,"Crystal Sugar Company, Inc"
+11FDC_U01,3 x 135 MW Coal Fired Thermal Power Plant Unit 1,MINDANAO,11FDC,FDC Misamis Power Corporation
+11FDC_U02,3 x 135 MW Coal Fired Thermal Power Plant Unit 2,MINDANAO,11FDC,FDC Misamis Power Corporation
+11FDC_U03,3 x 135 MW Coal Fired Thermal Power Plant Unit 3,MINDANAO,11FDC,FDC Misamis Power Corporation
+11FGBPC_G01,1.6 MW Agusan River Hydroelectric Power Plant,MINDANAO,11JASAA,FG Bukidnon Power Corporation
+11JASA_BAT,Jasaan Battery Energy Storage System (BESS),MINDANAO,11JASAA,SMGP BESS Power Inc. 
+11KBSOL_G01,AGEC Solar Power Plant,MINDANAO,11KIBAW,Asian Greenenergy Corp.
+11KEGMAR_G01,7.841 MW Bukidnon Bunker C-Fired Diesel Power Plant 2,MINDANAO,11MARAM,King Energy Generation Inc. - Maramag
+11KIRAS_G01,Kirahon Solar Power Plant,MINDANAO,11TAGOL,KIRAHON SOLAR ENERGY CORPORATION
+11MANFOR_G01,Manolo Fortich 1 Hydroelectric Power Plant Units 1-4,MINDANAO,11MANOL,"Hedcor Bukidnon, Inc."
+11MANFOR_G02,Manolo Fortich 2 Hydroelectric Power Plant Units 1-4,MINDANAO,11MANOL,"Hedcor Bukidnon, Inc."
+11MINBAL_G01,165 MW Balingasag Coal Fired Thermal Power Plant Units 1-3,MINDANAO,11TAGOL,Minergy Power Corporation
+11MINBU_G01,6.57 MW Bubunawan Hydroelectric Power Plant,MINDANAO,11TAGOL,"Bubunawan Power Company, Inc."
+11MISAMSOL_G01,20.774 MWP Misamis Solar Power Project (SPP),MINDANAO,11TAGOL,FDC Green Energy Corp.
+11MNCBLG_G01,9.21 MW Cabulig Mini-Hydroelectric Power Plant Units 1 & 2,MINDANAO,11JASAA,Mindanao Energy Systems - Cabulig
+11MNRGY_G01,Diesel Power Plant (Sulzer) Units 1-3,MINDANAO,11TAGOL,Mindanao Energy Systems - Sulzer
+11MNRGY_G02,Diesel Power Plant (Wartzila) Units 1 & 2,MINDANAO,11TAGOL,Mindanao Energy Systems - Wartzila
+11NBPC_G01,NBPC 6.20 MW Bunker C Fired Diesel Power Plant,MINDANAO,11MARAM,North Bukidnon Power Corporation
+11PACERM_G01,3 x 3.5 MW Diesel Power Plant,MINDANAO,11OPOL,PACERM-1 ENERGY CORPORATION
+11PKBUK_U01,PBI Bunker C-Fired Diesel Power Plant Unit 1,MINDANAO,11MANOL,Peakpower Bukidnon Inc.
+11PKBUK_U02,PBI Bunker C-Fired Diesel Power Plant Unit 2,MINDANAO,11MANOL,Peakpower Bukidnon Inc.
+11PULA4_U01,255 MW Pulangi IV Hydroelectric Power Plant Unit 1,MINDANAO,11MARAM,Power Sector Assets & Liabilities Management Corporation
+11PULA4_U02,255 MW Pulangi IV Hydroelectric Power Plant Unit 2,MINDANAO,11MARAM,Power Sector Assets & Liabilities Management Corporation
+11PULA4_U03,255 MW Pulangi IV Hydroelectric Power Plant Unit 3,MINDANAO,11MARAM,Power Sector Assets & Liabilities Management Corporation
+11STEAG_U01,232 MW MINDANAOanao Coal Fired Power Plant Unit 1,MINDANAO,11TAGOL,Power Sector Assets & Liabilities Management Corporation
+11STEAG_U02,232 MW MINDANAOanao Coal Fired Power Plant Unit 2,MINDANAO,11TAGOL,Power Sector Assets & Liabilities Management Corporation
+11VILLA_BAT,±20 MW Villanueva Battery Energy Storage System ,MINDANAO,11VILLA,SMGP BESS Power Inc. 
+12ASIGA_G01,AGEC Hydro 8MW Power Plant,MINDANAO,12BUTUA,Asiga Green Energy Corporation
+12KEGGIN_G01,"King Energy Generation, Inc. - Gingoog",MINDANAO,12NASIP,King Energy Generation Inc. - Gingoog
+12KEGTAN_G01,"King Energy Generation, Inc. - Tandag",MINDANAO,12SFRAN,King Energy Generation Inc. - Tandag
+12LKMAINIT_G01,Lake Mainit Hydroelectric Power Plant  ,MINDANAO,12BUTUA,Agusan Power Corporation
+12NACSUR_G01,10.944 MW Diesel Power Plant Unit,MINDANAO,12PLACE,Nickel Asia Corporation
+12PKSFRA_U01,PSFI Bunker C-Fired Diesel Power Plant Unit 1,MINDANAO,12SFRAN,Peakpower San Francisco Inc.
+12PKSFRA_U02,PSFI Bunker C-Fired Diesel Power Plant Unit 2,MINDANAO,12SFRAN,Peakpower San Francisco Inc.
+12TM2_U01,Mobile 1 Unit 1,MINDANAO,12TM2,"Therma Marine, Inc."
+12TM2_U02,Mobile 1 Unit 2,MINDANAO,12TM2,"Therma Marine, Inc."
+13DCPP_U01,150 MW Coal Fired Power Plant Unit 1,MINDANAO,13TORIL,"Therma South, Inc."
+13DCPP_U02,150 MW Coal Fired Power Plant Unit 2,MINDANAO,13TORIL,"Therma South, Inc."
+13DIGSOL_G01,Digos Solar Power Plant,MINDANAO,13MATAN,"Alterpower Digos Solar, Inc."
+13EUROH_G01,New Bataan Hydroelectric Power Plant,MINDANAO,13NABUN,"Euro Hydro Power (Asia) Holdings, Inc."
+13MACO_BAT,±20 MW MACO Battery Energy Storage System,MINDANAO,13MACO,SMGP BESS Power Inc. 
+13MAGDBNK_G01,15 MW Bunker C Fired Power Plant,MINDANAO,13MACO,"Universal Power Solutions, Inc."
+13MAGDBNK_U01,15 MW Bunker C-Fired Diesel Power Plant,MINDANAO,13MACO,Strategic Energy Development Inc.
+13MAGDBNK_U02,15 MW Bunker C-Fired Diesel Power Plant,MINDANAO,13MACO,Strategic Energy Development Inc.
+13MAGDBNK_U03,15 MW Bunker C-Fired Diesel Power Plant,MINDANAO,13MACO,Strategic Energy Development Inc.
+13MALITA_BAT,(+/-) 20MW Malita Battery Energy Storage System (BESS),MINDANAO,13CULAM,SMGP BESS Power Inc. 
+13MATIBNK_G01,11.040 Mati Bunker C-Fired Diesel Power Plant,MINDANAO,13MACO,Supreme Power Corporation
+13MPCDIG_G01,17.12 MW Modular Diesel Power Plant Units 1-16,MINDANAO,13MATAN,Mapalad Partners Inc.
+13SIBULAN_G01,"Sibulan A, Sibulan B, and Tudaya 1 Hydroelectric Power Plants",MINDANAO,13DAVAO,"Hedcor Sibulan, Inc."
+13SMC_U01,Malita CFB Coal-Fired Thermal Power Plant Unit 1,MINDANAO,13CULAM,Malita Power Inc.
+13SMC_U02,Malita CFB Coal-Fired Thermal Power Plant Unit 2,MINDANAO,13CULAM,Malita Power Inc.
+13TALOM1_G01,Talomo 1 Hydroelectric Power Plants,MINDANAO,13DAVAO,"Hedcor, Inc."
+13TALOM23_G01,"Talomo 2, 2A, 2B, and 3 Hydroelectric Power Plants",MINDANAO,13DAVAO,"Hedcor, Inc."
+13TM1_U01,Mobile 2 Unit 1,MINDANAO,13TM1,"Therma Marine, Inc."
+13TM1_U02,Mobile 2 Unit 2,MINDANAO,13TM1,"Therma Marine, Inc."
+13TUDAY2_G01,Tudaya 2 Hydroelectric Power Plant,MINDANAO,13DAVAO,"Hedcor Tudaya, Inc."
+14ALMADA_G01,3.0 MW Alamada Hydroelectric Power Plant ,MINDANAO,14SULTA,"Euro Hydro Power (Asia) Holdings, Inc."
+14ASTROSOL_G01,24.96 MW Santos Solar Power Plant,MINDANAO,14GENSA,Astronergy Development Gensan Inc.
+14BIOGS_G01,Biogas Power Plant,MINDANAO,14TACUR,Biotech Farms Incorporated
+14BIOMS_U01,5.96 MW Biomass Power Plant,MINDANAO,14TACUR,Biotech Farms Incorporated
+14COTSUGR_G01,3.4MW Biomas Plant,MINDANAO,14KIDAP,"Cotabato Sugar Central Company, Inc."
+14GERBIO_G01,3.33 MW Buluan Biomass Power Plant,MINDANAO,14TACUR,Green Earth Enersource Corporation
+14LAMSAN_G01,15.0 MW Biomass Power Plant,MINDANAO,14SULTA,Lamsan Power Corporation
+14MARBEL_U01,787.50 kW Marbel-1 Hydroelectric Power Plant ,MINDANAO,14TACUR,"Euro Hydro Power (Asia) Holdings, Inc."
+14MTAPO_U01,MINDANAOanao I Geothermal Power Plant,MINDANAO,14KIDAP,Energy Development Corporation
+14MTAPO_U02,MINDANAOanao II Geothermal Power Plant,MINDANAO,14KIDAP,Energy Development Corporation
+14MTAPO_U03,MINDANAOanao 3 (M3 Binary) Geothermal Power Project,MINDANAO,14KIDAP,Energy Development Corporation
+14NVSOL_G01,6.23 MW DC Centrala Solar Power Plant,MINDANAO,14TACUR,"Citicore Solar South Cotabato, Inc. (Formerly nv vogt Philippines Solar Energy One, Inc.)"
+14PKPSOC_G01,34.85 MW PSI Bunker C-Fired Diesel Power Plant Units 1-5,MINDANAO,14GENSA,Peakpower Soccsargen Inc.
+14SARANG_U01,118.5 MW Coal-Fired Power Plant Phase 1,MINDANAO,14GENSA,Sarangani Energy Corporation
+14SARANG_U02,118.50 MW Phase 2 Coal-Fired Power Plant,MINDANAO,14KAMAN,Sarangani Energy Corporation
+14SIGHYDRO_G01,14.500 MW Siguil Hydroelectric Power Project,MINDANAO,14GENSA,Siguil Hydro Power Corporation
+14SPGI_U01,SPGI 6 MW Biomass Power Plant,MINDANAO,14TACUR,Surallah Power Generation Inc.
+14SUPKOR_G01,11.90 MW Koronadal Bunker C-Fired Diesel Power Plant,MINDANAO,14TACUR,Supreme Power Corporation
+EOF,,,,\nEOF,,,`;
+        const csvLoads = `RESOURCE NAME,REGION NAME,STATION NAME
+01AEC_L01,LUZON,01MEXICO
+01AMBUK_SS,LUZON,01AMBKLAO
+01AMBUK_T1L1,LUZON,01AMBKLAO
+01ANGAT_SS,LUZON,01ANGAT
+01ANGAT_T5L1,LUZON,01ANGAT
+01ARAYSOL_L03,LUZON,01MEXICO
+01BAKUN_SS,LUZON,01BAKUN
+01BALNEO_L01,LUZON,01BALINGUEO
+01BALNEO_L02,LUZON,01BALINGUEO
+01BALNEO_SS,LUZON,01BALINGUEO
+01BALSIK_SS,LUZON,01BALSIK
+01BALSOL_L01,LUZON,01HERMOSA
+01BANTAY_SS,LUZON,01BNTAY
+01BATAAN_SS,LUZON,01LIMAY
+01BAUAN_T1L1,LUZON,01BAUANG
+01BAUAN_T1L2,LUZON,01BAUANG
+01BAUAN_T1L3,LUZON,01BAUANG
+01BAUAN_T2L1,LUZON,01BAUANG
+01BAUAN_T2L2,LUZON,01BAUANG
+01BAUANG_SS,LUZON,01BAUANG
+01BCNOT_SS,LUZON,01BCNOTAN
+01BCNOT_T1L1,LUZON,01BCNOTAN
+01BCNOT_T1L2,LUZON,01BCNOTAN
+01BINGA_SS,LUZON,01BINGA
+01BINGA_T1L1,LUZON,01BINGA
+01BNTAY_T1L1,LUZON,01BNTAY
+01BNTAY_T1L2,LUZON,01BNTAY
+01BNTAY_T1L3,LUZON,01BNTAY
+01BOTOL_T1L1,LUZON,01BOTOLAN
+01BOTOL_T1L2,LUZON,01BOTOLAN
+01BOTOLAN_SS,LUZON,01BOTOLAN
+01BPC_T1L1,LUZON,01BPC
+01BPC_T2L2,LUZON,01BPC
+01BPPC_SS,LUZON,01BPPC
+01BTPP_T3L1,LUZON,01LIMAY
+01BTPP_T3L2,LUZON,01LIMAY
+01BTPP_T3L3,LUZON,01LIMAY
+01BTPP_T3L4,LUZON,01LIMAY
+01BTPP_T3L5,LUZON,01LIMAY
+01BTPP_T4L1,LUZON,01LIMAY
+01BTSOLEN_BATL,LUZON,01LIMAY
+01BURGOS_SS,LUZON,01BURGOS
+01BYOMB_DID,LUZON,01BYOMBNG
+01BYOMB_SS,LUZON,01BYOMBNG
+01BYOMB_T1L1,LUZON,01BYOMBNG
+01BYOMB_T1L2,LUZON,01BYOMBNG
+01BYOMB_T1L3,LUZON,01BYOMBNG
+01CASECN_SS,LUZON,01CASCNAN
+01CASTIL_SS1,LUZON,01CASTILEHV
+01CBN_CELCOR,LUZON,01CBNTUAN
+01CBN_CELCOR2,LUZON,01CBNTUAN
+01CBNTU_SS,LUZON,01CBNTUAN
+01CBNTU_T1L1,LUZON,01CBNTUAN
+01CBNTU_T1L3,LUZON,01CBNTUAN
+01CBNTU_T2L1,LUZON,01CBNTUAN
+01CBNTU_T2L2,LUZON,01CBNTUAN
+01CLARK_L01,LUZON,01CLARK
+01CLARK_L02,LUZON,01CLARK
+01CLARK_L03,LUZON,01CLARK
+01CLARK_L04,LUZON,01CLARK
+01CLARK_SS,LUZON,01CLARK
+01CLARK_T1L1,LUZON,01CLARK
+01CLARK_T1L2,LUZON,01CLARK
+01CLARK_T2L1,LUZON,01CLARK
+01CN_TRELC1,LUZON,01CNCEPCN
+01CN_TRELC2,LUZON,01CNCEPCN
+01CNCEP_BATL,LUZON,01CNCEPCN
+01CNCEP_CAT,LUZON,01CNCEPCN
+01CNCEP_DAP2,LUZON,01CNCEPCN
+01CNCEP_SS,LUZON,01CNCEPCN
+01CNCEP_T1L3,LUZON,01CNCEPCN
+01CNCEP_TEI,LUZON,01CNCEPCN
+01CRUZD_MECO,LUZON,01SNRAFAEL
+01CRUZD_SS,LUZON,01SNRAFAEL
+01CRUZD_T2L1,LUZON,01SNRAFAEL
+01CURIM_SS,LUZON,01CURIMAO
+01CURIM_T1L1,LUZON,01CURIMAO
+01CURIM_T1L2,LUZON,01CURIMAO
+01DOMSOL_L01,LUZON,01SNMANUEL
+01DUHAT_SS,LUZON,01DUHAT
+01DUHAT_T1L1,LUZON,01DUHAT
+01EHVSJ_SS,LUZON,01EHVSJOS
+01EHVSM_SS,LUZON,01EHVNAGSAAG
+01GAMU_BATL,LUZON,01GAMU
+01GAMU_SS,LUZON,01GAMU
+01GAMU_T1L1,LUZON,01GAMU
+01GAMU_T1L2,LUZON,01GAMU
+01GNPD_SS,LUZON,01MARIVELES
+01HANJI_SS,LUZON,01CAWAGO
+01HANJI_T1L1,LUZON,01CAWAGO
+01HANJI_T2L1,LUZON,01CAWAGO
+01HERMO_FBL,LUZON,01HERMOSA
+01HERMO_SS,LUZON,01HERMOSA
+01HERMO_T1L1,LUZON,01HERMOSA
+01HERMO_T1L2,LUZON,01HERMOSA
+01HERMO_T1L3,LUZON,01HERMOSA
+01HERMO_T1L4,LUZON,01HERMOSA
+01KDAM_SS,LUZON,01KDAMEHV
+01LAMAO_BATL,LUZON,01LAMAO
+01LAMAO_SS,LUZON,01LAMAO
+01LAOAG_SS,LUZON,01LAOAG
+01LAOAG_T1L1,LUZON,01LAOAG
+01LAOAG_T1L2,LUZON,01LAOAG
+01LAOAG_T2L2,LUZON,01LAOAG
+01LAOSOL_SS,LUZON,01CAYANGA
+01LAT_BENECO,LUZON,01LATRINI
+01LAT_PHILEX,LUZON,01LATRINI
+01LATRI_SS,LUZON,01LATRINI
+01LATRI_T1L1,LUZON,01LATRINI
+01LATRI_T2L1,LUZON,01LATRINI
+01LATRI_T2L2,LUZON,01LATRINI
+01LATRI_T2L3,LUZON,01LATRINI
+01LBR_CNPELC,LUZON,01LBRADOR
+01LBR_DECORP,LUZON,01LBRADOR
+01LBR_PNELC1,LUZON,01LBRADOR
+01LBRDR_SS,LUZON,01LBRADOR
+01LIMAY_BATL,LUZON,01LIMAY
+01LIMAY_SS,LUZON,01BCCPP
+01MAEC_S01,LUZON,01CURIMAO
+01MAGAPIT_BATL,LUZON,01TGEGARAO
+01MAGAT_BATL,LUZON,01MAGAT
+01MAGAT_SS,LUZON,01MAGAT
+01MALOL_SS,LUZON,01MALOLOS
+01MALOL_T1L1,LUZON,01MALOLOS
+01MAREHV_SS,LUZON,01MAREHV
+01MARVEL_AUX,LUZON,01MARIVELES
+01MARVEL_SS,LUZON,01MARIVELES
+01MASIWA_SS,LUZON,01CBNTUAN
+01MEX_AEC,LUZON,01MEXICO
+01MEX_CISP,LUZON,01MEXICO
+01MEX_CLARK1,LUZON,01MEXICO
+01MEX_CLARK2,LUZON,01MEXICO
+01MEX_CND,LUZON,01MEXICO
+01MEX_L01,LUZON,01MEXICO
+01MEX_MIC,LUZON,01MEXICO
+01MEX_PELCO1,LUZON,01MEXICO
+01MEX_PIMP,LUZON,01MEXICO
+01MEX_SFLAPC,LUZON,01MEXICO
+01MEX_SKK,LUZON,01MEXICO
+01MEXICO_SS,LUZON,01MEXICO
+01MPGC_SS,LUZON,01MPGC
+01MRVEL_T1L1,LUZON,01MARIVELES
+01MSINLO_BATL,LUZON,01MSINLOC
+01MSINLO_SS,LUZON,01MSINLOC
+01NSNMN_L01,LUZON,01EHVNAGSAAG
+01NSNMN_L02,LUZON,01EHVNAGSAAG
+01NSNMN_SS,LUZON,01EHVNAGSAAG
+01NSNMN_T1L1,LUZON,01EHVNAGSAAG
+01NWIND_L01,LUZON,01LAOAG
+01OLONG_SS,LUZON,01OLONGAP
+01OLONG_T1L1,LUZON,01OLONGAP
+01OLONG_T2L2,LUZON,01OLONGAP
+01OLONG_T3L3,LUZON,01OLONGAP
+01PAGCAP_L01,LUZON,01PAGUDPUD
+01PAGUD_SS,LUZON,01PAGUDPUD
+01PNTBNG_SS,LUZON,01PANTABA
+01S_ENRO_SS,LUZON,01SBMA
+01SE_ABRECO,LUZON,01SNESTBN
+01SHIZEN_L01,LUZON,01BOTOLAN
+01SMC_SS,LUZON,01LAMAO
+01SMC_SS2,LUZON,01LAMAO
+01SMC_SS3,LUZON,01LAMAO
+01SMC_SS4,LUZON,01LAMAO
+01SNEST_SS,LUZON,01SNESTBN
+01SNEST_T3L1,LUZON,01SNESTBN
+01SNEST_T3L2,LUZON,01SNESTBN
+01SNJOS_CAM,LUZON,01EHVSJOS
+01SNJOS_T1L1,LUZON,01ANGSJO_TP2
+01SNJOS_T1L2,LUZON,01EHVSJOS
+01SNJOS_T1L3,LUZON,01ANGSJO_TP4
+01SNJOSE_L01,LUZON,01EHVSJOS
+01SNJOSE_SS,LUZON,01EHVSJOS
+01SNM_PNELC3,LUZON,01SNMANUEL
+01SNMAN_BATL,LUZON,01SNMANUEL
+01SNMAN_LYO,LUZON,01SNMANUEL
+01SNMAN_SS,LUZON,01SNMANUEL
+01SNMAN_T1L2,LUZON,01SNMANUEL
+01SNMAR_SS,LUZON,01SNMARCELINO
+01SNMNAN_T1L3,LUZON,01SNMANUEL
+01SNTGO_SS,LUZON,01SNTGO
+01SNTGO_T1L1,LUZON,01SNTGO
+01SNTGO_T1L2,LUZON,01SNTGO
+01SNTGO_T1L3,LUZON,01SNTGO
+01SNTGO_T2L1,LUZON,01SNTGO
+01SNTGO_T2L2,LUZON,01SNTGO
+01SROQUE_SS,LUZON,01SNROQUE
+01SUAL_T3L1,LUZON,01SUAL
+01SUBIC_T3L1,LUZON,01SBMA
+01SUBIC_T3L2,LUZON,01SBMA
+01T_ASI_T3L1,LUZON,01T_ASIA
+01TERRASOL_L01,LUZON,01EHVTERRA
+01TG_CGELCO1,LUZON,01TGEGARAO
+01TG_CGELCO2,LUZON,01TGEGARAO
+01TG_ISELCO2,LUZON,01TGEGARAO
+01TGEGA_SS,LUZON,01TGEGARAO
+01TGEGA_T1L1,LUZON,01TGEGARAO
+01TRASU_L01,LUZON,01CNCEPCN
+02ARANE_T1L1,LUZON,02DONAIMELDA
+02BALNT_T1L1,LUZON,02QUEZON
+02DOLOR_T1L1,LUZON,02DOLORES
+02PACO_T1L1,LUZON,02MANILA
+02SUCAT_T1L1,LUZON,02MUNTINLUPA
+02ZAPOT_SS,LUZON,02ZAPOTE
+02ZAPOT_T1L1,LUZON,02ZAPOTE
+03ALMNOS_BAT1L,LUZON,03MKBAN-A
+03ALMNOS_BAT2L,LUZON,03MKBAN-A
+03AMADEO_T1L1,LUZON,03AMADEO
+03AVION_SS,LUZON,03AVION
+03BACMAN_BATL,LUZON,03PALAYAN
+03BACMAN_SS,LUZON,03BACMANGP
+03BAT_BTLEC2,LUZON,03BATANGAS
+03BAT_LIP01,LUZON,03BATANGAS
+03BAT_LIP02,LUZON,03BATANGAS
+03BAT_MECO,LUZON,03BATANGAS
+03BAT_MECO1,LUZON,03BATANGAS
+03BAT_MECO2,LUZON,03BATANGAS
+03BAT_ROS01,LUZON,03BATANGAS
+03BAT_T1L1,LUZON,03BATANGAS
+03BAT_T2L1,LUZON,03BATANGAS
+03BATAN_SS,LUZON,03BATANGAS
+03BATAN_T1L2,LUZON,03BATANGAS
+03BATAN_T2L2,LUZON,03BATANGAS
+03BINAN_SS,LUZON,03BINAN
+03BINAN_T1L1,LUZON,03BINAN
+03BOTOCA_L01,LUZON,03CALIRAY
+03BOTOCA_SS,LUZON,03CALIRAY
+03CALAMBA_L01,LUZON,03CALAMBA
+03CALAMBA_SS,LUZON,03CALAMBA
+03CALAU_SS,LUZON,03CALAUAN
+03CALAU_T1L1,LUZON,03CALAUAN
+03CALI_FLECO,LUZON,03CALIRAY
+03CALIR_TAL1,LUZON,03CALIRAY
+03CALIRY_SS,LUZON,03CALIRAY
+03CALIRY_SS1,LUZON,03CALIRAY
+03CALT_T1L1,LUZON,03CLACA
+03CLA_BCNOT,LUZON,03SALONG
+03CLA_BTLEC1,LUZON,03CLACA
+03CLA_STLCOR,LUZON,03CLACA
+03CLA_T1L1,LUZON,03CLACA
+03CLACA_SS,LUZON,03CLACA
+03DAR_ALECO,LUZON,03DARAGA
+03DAR_SAL,LUZON,03DARAGA
+03DAR_SRECO2,LUZON,03DARAGA
+03DAR_STDOM,LUZON,03DARAGA
+03DARAG_SS,LUZON,03DARAGA
+03DARAG_T1L1,LUZON,03DARAGA
+03DASMA_L01,LUZON,03DASMAEHV
+03DASMA_SS,LUZON,03DASMAEHV
+03EERI_L01,LUZON,03EERI
+03EERI_SS,LUZON,03EERI
+03GUMAC_SS,LUZON,03GUMACA
+03GUMAC_T1L1,LUZON,03GUMACA
+03GUMAC_T1L2,LUZON,03GUMACA
+03GUMAC_T1L3,LUZON,03GUMACA
+03GUMAC_T1L4,LUZON,03GUMACA
+03ILI500_SS,LUZON,03ILIJAN
+03ILIJAN_SS,LUZON,03ILIJAN
+03ILIJAN_SS2,LUZON,03ILIJAN
+03IRIGA_SS,LUZON,03NAGA
+03KAL_E_T1L1,LUZON,03LUMBAN
+03KAL_SS,LUZON,03SNJUAN
+03LABO_SS,LUZON,03LABO
+03LABO_T1L1,LUZON,03LABO
+03LABO_T1L2,LUZON,03LABO
+03LIGAO_SS,LUZON,03DARAGA
+03LUMBAN_BATL,LUZON,03LUMBAN
+03LUMBAN_SS,LUZON,03LUMBAN
+03MAKBA_T3L1,LUZON,03MKBAN-A
+03MAKBA_T3L2,LUZON,03MKBAN-A
+03MALVAR_SS,LUZON,03MKBAN-A
+03MKBN_SLACE,LUZON,03MKBAN-A
+03MKBNA_SS,LUZON,03MKBAN-A
+03MKBNB_SS,LUZON,03MKBAN-B
+03MKBNC_SS,LUZON,03MKBAN-C
+03MKBND_SS,LUZON,03MKBAN-D
+03MKBNE_SS,LUZON,03MKBAN-A
+03MLAYA_L01,LUZON,03MLAYA
+03MLAYA_SS,LUZON,03MLAYA
+03MLAYA_SS1,LUZON,03MLAYA
+03MLAYA_T2L1,LUZON,03MLAYA
+03MLAYA_T2L2,LUZON,03MLAYA
+03NAG_CSRC2B,LUZON,03NAGA
+03NAG_CSRCO1,LUZON,03NAGA
+03NAG_CSRCO2,LUZON,03NAGA
+03NAG_CSRCO3,LUZON,03NAGA
+03NAG_CSRCO4,LUZON,03NAGA
+03NAG_SS,LUZON,03NAGA
+03NASU_T1L1,LUZON,03CLACA
+03ORMAT_SS,LUZON,03MKBAN-A
+03PAGEHV_SS,LUZON,03PAGEHV
+03PGBIL_SS,LUZON,03PGBILAO
+03PGBIL_SS1,LUZON,03PGBILAO
+03PGBIL_SS2,LUZON,03PGBILAO
+03QPPL_SU1,LUZON,03MAUBAN
+03QPPL_T5L1,LUZON,03MAUBAN
+03SBPL_L01,LUZON,03MAUBAN
+03SLPGC_SS,LUZON,03SLPGC
+03SLTEC_SS,LUZON,03SALONG
+03SNGAB_S01,LUZON,03STARITA
+03STAR_SS1,LUZON,03STARITA
+03STAR_SS2,LUZON,03STARITA
+03STAR_SS3,LUZON,03STARITA
+03STAR_SS4,LUZON,03STARITA
+03STAR_SS5,LUZON,03STARITA
+03STAR_SS6,LUZON,03STARITA
+03STROS_T1L1,LUZON,03STROSA
+03TAYAB_SS,LUZON,03TAYABEHV
+03TAYAB_T1L1,LUZON,03TAYABEHV
+03TAYAB_T1L2,LUZON,03TAYABEHV
+03TGPP_L01,LUZON,03TIWI-C
+03TIWIA_SS,LUZON,03TIWI-A
+03TIWIC_L01,LUZON,03TIWI-C
+03TIWIC_SS,LUZON,03TIWI-C
+03TUY1_SS,LUZON,03CLACA
+03TUY2_SS,LUZON,03CLACA
+04BABAT_SS,VISAYAS,04BABATNGN
+04BABAT_T1L1,VISAYAS,04BABATNGN
+04BAGLI_T1L1,VISAYAS,04STARITA
+04BAGLI_T1L2,VISAYAS,04STARITA
+04CLBYOG_L02,VISAYAS,04CALBAYOG
+04CLBYOG_SS,VISAYAS,04CALBAYOG
+04ISABE_SS,VISAYAS,04ISABEL
+04ISABE_T1L1,VISAYAS,04ISABEL
+04ISABE_T2L1,VISAYAS,04ISABEL
+04ISABE_T3L1,VISAYAS,04ISABEL
+04ISABE_T4L2,VISAYAS,04ISABEL
+04ISABE_T5L2,VISAYAS,04ISABEL
+04LEYTE_S01,VISAYAS,04KANANGA
+04MAASI_SS,VISAYAS,04MAASIN
+04MAASI_T1L1,VISAYAS,04MAASIN
+04MAASI_T2L2,VISAYAS,04MAASIN
+04ORMOC_BATL,VISAYAS,04ORMOC
+04ORMOC_SS,VISAYAS,04ORMOC
+04ORMOC_T2L1,VISAYAS,04ORMOC
+04ORMOC_T2L2,VISAYAS,04ORMOC
+04PARA_SS,VISAYAS,04PARANAS
+04SNAGU_L01,VISAYAS,04CALBAYOG
+04STAR_SS,VISAYAS,04STARITA
+04TABAN_BATL,VISAYAS,04TABANGO
+04TABAN_SS,VISAYAS,04TABANGO
+04TABAN_T1L1,VISAYAS,04TABANGO
+04TONGO_BATL,VISAYAS,04TONGONA
+04TONGO_T2L2,VISAYAS,04TONGONA
+04WRIGH_T1L1,VISAYAS,04PARANAS
+04WRIGH_T2L2,VISAYAS,04PARANAS
+05BANIL_T1L1,VISAYAS,05CEBU
+05BANIL_T1L2,VISAYAS,05CEBU
+05BANIL_T1L3,VISAYAS,05CEBU
+05CALUNG_CEP,VISAYAS,05CALUNG
+05CDPPI_SS1,VISAYAS,05NAGA
+05CDPPI_SS2,VISAYAS,05NAGA
+05CEBU_SS,VISAYAS,05CEBU
+05CEDC_SS,VISAYAS,05DAANLUNSOD
+05CEMEX_L01,VISAYAS,05COLON
+05COLON_L01,VISAYAS,05COLON
+05COMPS_SS,VISAYAS,05COMPSTLA
+05COMPS_T1L1,VISAYAS,05COMPSTLA
+05COMPS_T2L2,VISAYAS,05COMPSTLA
+05DAANB_SS,VISAYAS,05DAANBNTAY
+05DMA_L01,VISAYAS,05DUMANJUG
+05DMAN_SS,VISAYAS,05DUMANJUG
+05KSPC_SS1,VISAYAS,05KSPC
+05KSPC_SS2,VISAYAS,05KSPC
+05LAPU_SS,VISAYAS,05LAPULAPU
+05MCTAN_T1L1,VISAYAS,05LAPULAPU
+05MNDUE_SS,VISAYAS,05MANDAUE
+05MNDUE_T1L1,VISAYAS,05MANDAUE
+05MNDUE_T1L2,VISAYAS,05MANDAUE
+05MNDUE_T1L4,VISAYAS,05MANDAUE
+05MNDUE_T1L5,VISAYAS,05MANDAUE
+05NAGA_T1L1,VISAYAS,05NAGA
+05NAGA_T2L2,VISAYAS,05NAGA
+05NAGLES_L01,VISAYAS,05COLON
+05NNAGVE_L01,VISAYAS,05COLON
+05NNAGVE_L02,VISAYAS,05COLON
+05QUIOT_T1L1,VISAYAS,05QUIOT
+05SAMB_L01,VISAYAS,05SAMBOAN
+05SAMB_L02,VISAYAS,05SAMBOAN
+05SAMB_SS,VISAYAS,05SAMBOAN
+05TALATR1_SS,VISAYAS,05CALUNG
+05TALAV_SS,VISAYAS,05CALUNG
+05TALAV_T1L1,VISAYAS,05CALUNG
+05TALIS_T1L1,VISAYAS,05DAANBNTAY
+05THVI_SS1,VISAYAS,05THERMA
+05THVI_SS2,VISAYAS,05THERMA
+05TOL_CARMEN,VISAYAS,05TOLEDO
+05TOLEDO_BATL,VISAYAS,05TOLBESS
+05TPC_L01,VISAYAS,05TOLEDO
+05TPC_S01,VISAYAS,05TOLEDO
+05TPC_S02,VISAYAS,05TOLEDO
+06AMLAN_SS,VISAYAS,06AMLAN
+06AMLAN_T1L1,VISAYAS,06AMLAN
+06AMLAN_T2L2,VISAYAS,06AMLAN
+06BACOL_SS,VISAYAS,06BACOLOD
+06BACOL_T1L1,VISAYAS,06BACOLOD
+06BACOL_T1L2,VISAYAS,06BACOLOD
+06BACOL_T2L2,VISAYAS,06BACOLOD
+06BACOL_T3L3,VISAYAS,06BACOLOD
+06BBGPP_L01,VISAYAS,06BACOLOD
+06BCL_SS,VISAYAS,06BACOLOD
+06BCLBAS_LD1,VISAYAS,06BACOLOD
+06CADIZL_SS,VISAYAS,06CADIZ
+06CADIZL_T1L1,VISAYAS,06CADIZ
+06CADIZL_T1L2,VISAYAS,06CADIZ
+06CADIZL_T1L3,VISAYAS,06CADIZ
+06CADIZL_T1L4,VISAYAS,06CADIZ
+06CAY_SS,VISAYAS,06CALATRAVA
+06CLTRAVA_SS,VISAYAS,06CALATRAVA
+06GAHIT_SS,VISAYAS,06GAHIT
+06HELIOS_S01,VISAYAS,06HELIOS
+06KABAN_BATL,VISAYAS,06KBANBESS
+06KABAN_L01,VISAYAS,06KBANBESS
+06KABAN_SS,VISAYAS,06KABANKALAN
+06KABAN_T1L1,VISAYAS,06KABANKALAN
+06KABAN_T2L2,VISAYAS,06KABANKALAN
+06MABIN_SS,VISAYAS,06MABINAY
+06MABIN_T1L1,VISAYAS,06MABINAY
+06MABIN_T2L2,VISAYAS,06MABINAY
+06PAL1A_SS,VISAYAS,06PGPP1
+06PGPP2_SS,VISAYAS,06PGPP2
+06SNCARLOS_SS,VISAYAS,06SNCARLOS
+06SONEG_BATL,VISAYAS,06PGPP2
+06VISTASOL_L01,VISAYAS,06BACOLOD
+07BOHOL_T1L1,VISAYAS,07UBAY
+07BOHOL_T4L4,VISAYAS,07UBAY
+07COREL_T1L1,VISAYAS,07CORELLA
+07COREL_T1L2,VISAYAS,07CORELLA
+07COREL_T1L3,VISAYAS,07CORELLA
+07CRA_SS,VISAYAS,07CORELLA
+07UBAY_BATL,VISAYAS,07UBAY
+07UBAY_T1L1,VISAYAS,07UBAY
+07UBAY_T2L2,VISAYAS,07UBAY
+07UBAY_T3L3,VISAYAS,07TAPAL
+08BANTAP_L01,VISAYAS,08BANTAP
+08BARO_SS,VISAYAS,08BAROTAC
+08BARTAC_L01,VISAYAS,08BAROTAC
+08BARTAC_SS,VISAYAS,08BAROTAC
+08BVISTA_L01,VISAYAS,08BVISTA
+08BVISTA_L02,VISAYAS,08BVISTA
+08CONCP_T1L1,VISAYAS,08CONCEPCION
+08DINGL_SS,VISAYAS,08DINGLE
+08DINGL_T1L1,VISAYAS,08DINGLE
+08DINGL_T1L2,VISAYAS,08DINGLE
+08DINGL_T1L3,VISAYAS,08DINGLE
+08DINGL_T1L4,VISAYAS,08DINGLE
+08DINGL_T2L1,VISAYAS,08DINGLE
+08DINGL_T2L2,VISAYAS,08DINGLE
+08ILO_SS1,VISAYAS,08ILOILO1
+08NABAS_L01,VISAYAS,08NABAS
+08NABAS_L02,VISAYAS,08NABAS
+08NABAS_L03,VISAYAS,08NABAS
+08NABAS_SS,VISAYAS,08NABAS
+08PALM_S01,VISAYAS,08CONCEPCION
+08PANIT_SS,VISAYAS,08PANITAN
+08PANIT_T1L1,VISAYAS,08PANITAN
+08PANIT_T2L2,VISAYAS,08PANITAN
+08PDPP3_S01,VISAYAS,08DINGLE
+08PEDC_SS1,VISAYAS,08ILOILO1
+08PEDC_SS2,VISAYAS,08ILOILO1
+08PEDC_SS3,VISAYAS,08ILOILO1
+08PEDC_T1L1,VISAYAS,08ILOILO1
+08PEDC_T1L2,VISAYAS,08ILOILO1
+08SLWIND_L01,VISAYAS,08BVISTA
+08SNJOSE_L01,VISAYAS,08SNJOSE
+08SNJOSE_L02,VISAYAS,08SNJOSE
+08SNJOSE_L03,VISAYAS,08SNJOSE
+08SNJOSE_SS,VISAYAS,08SNJOSE
+08STBAR_SS1,VISAYAS,08STBARBRA
+08STBAR_SS2,VISAYAS,08STBARBRA
+08STBAR_SS3,VISAYAS,08STBARBRA
+08STBAR_T1L1,VISAYAS,08STBARBRA
+08STBAR_T2L2,VISAYAS,08STBARBRA
+09AURORA_SS,MINDANAO,09AUROR
+09CLB_T1L1,MINDANAO,09AUROR
+09KAP_T1L1,MINDANAO,09AUROR
+09LALA_SS,MINDANAO,09LALA
+09MHY_T1L1,MINDANAO,09AUROR
+09MLS_T1L1,MINDANAO,09NAGA
+09NAGA_SS,MINDANAO,09NAGA
+09PITOG_BATL,MINDANAO,09PITOG
+09PITOGO_SS,MINDANAO,09PITOG
+09POLAN_SS,MINDANAO,09POLAN
+09RXS_T2L1,MINDANAO,09POLAN
+09SANGALI_BATL,MINDANAO,09ZAMBO
+09SJG_T1L1,MINDANAO,09PITOG
+09SML_T1L1,MINDANAO,09AUROR
+09SRW_T1L1,MINDANAO,09NAGA
+09TMG_T1L1,MINDANAO,09PITOG
+09TMG_T2L1,MINDANAO,09ZAMBO
+09TUL_T1L1,MINDANAO,09PITOG
+09WMPC_S01,MINDANAO,09WMPC
+09ZAMBO_SS,MINDANAO,09ZAMBO
+09ZAMSAN_L01,MINDANAO,09ZAMBO
+10AG6_T2L1,MINDANAO,10BALOI
+10AGUS1_SS,MINDANAO,10AGUS1
+10AGUS2_SS,MINDANAO,10AGUS2
+10AGUS4_SS,MINDANAO,10AGUS4
+10AGUS5_SS,MINDANAO,10AGUS5
+10AGUS6_SS,MINDANAO,10AGUS6
+10BALOI_L01,MINDANAO,10AGUS6
+10BALOI_SS,MINDANAO,10BALOI
+10BUR_T1L1,MINDANAO,10AGUS6
+10BUR_T1L2,MINDANAO,10AGUS6
+10IDPP_SS,MINDANAO,10IDPP
+10KAU_T1L1,MINDANAO,10AGUS6
+10KAUSWGN_SS,MINDANAO,10KAUSW
+10KIW_T1L1,MINDANAO,10AGUS6
+10KIW_T2L1,MINDANAO,10LGAIT
+10LGAIT_SS,MINDANAO,10LGAIT
+10MCN_T1L1,MINDANAO,10BALOI
+10MCR_T1L1,MINDANAO,10BALOI
+10MCT_T1L1,MINDANAO,10AGUS6
+10MLN_T1L1,MINDANAO,10AGUS1
+10MPL_T1L1,MINDANAO,10AGUS6
+10MRW_T1L1,MINDANAO,10AGUS1
+10MRW_T2L1,MINDANAO,10BALOI
+10NUN_T1L2,MINDANAO,10AGUS6
+10OPO_T1L1,MINDANAO,10LGAIT
+10PAT_T1L1,MINDANAO,10LGAIT
+10PGW_T1L1,MINDANAO,10LGAIT
+10PLT_T1L1,MINDANAO,10IDPP
+10PLT_T2L1,MINDANAO,10LGAIT
+10SRZ_T1L1,MINDANAO,10BALOI
+11CDO_T1L1,MINDANAO,11OPOL
+11FDC_SS,MINDANAO,11FDC
+11JASA_BATL,MINDANAO,11JASAA
+11JASAAN_SS,MINDANAO,11JASAA
+11KIB_T1L1,MINDANAO,11MARAM
+11KIB_T1L2,MINDANAO,11MARAM
+11KIBAWE_SS,MINDANAO,11KIBAW
+11KNG_T1L1,MINDANAO,11JASAA
+11LAGUIN_SS,MINDANAO,11LAGUIN
+11LBA_T1L1,MINDANAO,11JASAA
+11LNI_T1L1,MINDANAO,11LAGUIN
+11LUN_T1L1,MINDANAO,11MANOL
+11MAN1_S01,MINDANAO,11MANOL
+11MAN2_S01,MINDANAO,11MANOL
+11MANOLO_SS,MINDANAO,11MANOL
+11MARAM_SS,MINDANAO,11MARAM
+11MISAMSOL_L01,MINDANAO,11TAGOL
+11MLY_T1L1,MINDANAO,11MARAM
+11MOR_T1L1,MINDANAO,11OPOL
+11NAT_T1L1,MINDANAO,11TAGOL
+11NAT_T2L1,MINDANAO,11JASAA
+11OPO_T1L1,MINDANAO,11OPOL
+11OPOL_SS,MINDANAO,11OPOL
+11PAL_T1L1,MINDANAO,11KIBAW
+11PG4_T1L1,MINDANAO,11MARAM
+11SME_T1L1,MINDANAO,11TAGOL
+11SMH_T1L1,MINDANAO,11JASAA
+11TAGOL_SS,MINDANAO,11TAGOL
+11VILLA_BATL,MINDANAO,11VILLA
+11VILLA_L01,MINDANAO,11VILLA
+11VILLA_SS,MINDANAO,11VILLA
+12ALE_T1L1,MINDANAO,12SFRAN
+12BAG_T1L1,MINDANAO,12BISLI
+12BISLIG_SS,MINDANAO,12BISLI
+12BUT_T2L1,MINDANAO,12NASIP
+12BUTUAN_SS,MINDANAO,12BUTUA
+12BYG_T1L1,MINDANAO,12BUTUA
+12LMO_T1L1,MINDANAO,12BUTUA
+12MAD_T1L1,MINDANAO,12PLACE
+12NAS_T1L1,MINDANAO,12BUTUA
+12NASIP_SS,MINDANAO,12NASIP
+12PBA_T1L1,MINDANAO,12BISLI
+12PLACER_SS,MINDANAO,12PLACE
+12SFRAN_SS,MINDANAO,12SFRAN
+12SLU_T1L1,MINDANAO,12NASIP
+12SNT_T1L1,MINDANAO,12BUTUA
+12STCRUZ_L01,MINDANAO,12PLACE
+12SUR_T1L1,MINDANAO,12PLACE
+12TBD_T1L1,MINDANAO,12PLACE
+12TBO_T1L1,MINDANAO,12BISLI
+12TDG_T1L1,MINDANAO,12SFRAN
+12THERMA2_SS,MINDANAO,12TM2
+12TRE_T1L1,MINDANAO,12BISLI
+13ASU_T1L1,MINDANAO,13NABUN
+13BAJ_T1L1,MINDANAO,13DAVAO
+13BAJ_T1L2,MINDANAO,13DAVAO
+13BNS_T1L1,MINDANAO,13MATAN
+13BNY_T1L1,MINDANAO,13MACO
+13BUNAW_SS,MINDANAO,13BUNAW
+13CULAMAN_SS,MINDANAO,13CULAM
+13DAV_T1L1,MINDANAO,13TORIL
+13DAVAO_SS,MINDANAO,13DAVAO
+13DIG_T1L1,MINDANAO,13DAVAO
+13DIG_T2L1,MINDANAO,13MATAN
+13DIG_T3L1,MINDANAO,13TORIL
+13DLP_T1L1,MINDANAO,13DAVAO
+13DLP_T1L2,MINDANAO,13DAVAO
+13DLP_T1L3,MINDANAO,13DAVAO
+13DLP_T2L1,MINDANAO,13BUNAW
+13DLP_T2L2,MINDANAO,13BUNAW
+13DRA_T1L1,MINDANAO,13BUNAW
+13DRA_T1L2,MINDANAO,13BUNAW
+13DSP_T1L1,MINDANAO,13MATAN
+13DSR_T1L1,MINDANAO,13CULAM
+13MACO_BATL,MINDANAO,13MACO
+13MACO_SS,MINDANAO,13MACO
+13MALITA_BATL,MINDANAO,13CULAM
+13MATAN_SS,MINDANAO,13MATAN
+13MON_T1L1,MINDANAO,13NABUN
+13MSR_T1L1,MINDANAO,13NABUN
+13NABUN_SS,MINDANAO,13NABUN
+13PMA_T1L1,MINDANAO,13MATAN
+13TGM_T1L1,MINDANAO,13MACO
+13THERMA1_SS,MINDANAO,13TM1
+13TORIL_SS,MINDANAO,13TORIL
+14BGN_T1L1,MINDANAO,14KIDAP
+14BGN_T2L1,MINDANAO,14TACUR
+14DSA_T1L1,MINDANAO,14SULTA
+14DSA_T2L1,MINDANAO,14TACUR
+14GENSAN_SS,MINDANAO,14GENSA
+14GLA_T1L1,MINDANAO,14GENSA
+14KAM_L03,MINDANAO,14GENSA
+14KAMANGA_SS,MINDANAO,14KAMAN
+14KIDAP_SS,MINDANAO,14KIDAP
+14KLN_T1L1,MINDANAO,14TACUR
+14LLE_T1L1,MINDANAO,14GENSA
+14MID_T1L1,MINDANAO,14SULTA
+14PTU_T1L1,MINDANAO,14GENSA
+14SKU_T1L1,MINDANAO,14SULTA
+14SMY_T1L1,MINDANAO,14SULTA
+14SRL_T1L1,MINDANAO,14TACUR
+14SULTAN_SS,MINDANAO,14SULTA
+14TACSUR_L02,MINDANAO,14TACUR
+14TACUR_SS,MINDANAO,14TACUR
+14TIN_T1L1,MINDANAO,14GENSA
+14TIN_T1L2,MINDANAO,14GENSA
+EOF,,\nEOF,,,`;
+        const csvBranchGroups = `BRANCH GROUP NAME,VOLTAGE LEVEL,EQUIPMENT NAME
+NORTH LUZON_TO_NORTH LUZON,230,1HERM_1SNJ1
+NORTH LUZON_TO_NORTH LUZON,230,1HERM_1MAL1
+NORTH LUZON_TO_NORTH LUZON,230,1HERM_1DUH1
+NORTH LUZON_TO_NORTH LUZON,230,1HERM_1BLK1
+NORTH LUZON_TO_NORTH LUZON,230,1HERM_1BLK2
+NORTH LUZON_TO_NORTH LUZON,230,1MEXI_1HER1
+NORTH LUZON_TO_NORTH LUZON,230,1MEXI_1HER2
+NORTH LUZON_TO_NORTH LUZON,230,1BCCP_1HER1
+NORTH LUZON_TO_NORTH LUZON,230,1BCCP_1HER2
+NORTH LUZON_TO_NORTH LUZON,230,1BCCP_1HER3
+SOUTH LUZON_TO_SOUTH LUZON,230,3STAR_3BAT1
+SOUTH LUZON_TO_SOUTH LUZON,230,3STAR_3BAT2
+SOUTH LUZON_TO_SOUTH LUZON,230,3STAR_3CLA1
+SOUTH LUZON_TO_SOUTH LUZON,230,3STAR_3CLA2
+SOUTH LUZON_TO_SOUTH LUZON,500,3DASM_3ILI1
+SOUTH LUZON_TO_SOUTH LUZON,500,3DASM_3TAY1
+LEYTE_TO_CEBU,230,5DAAN_4TAB1
+LEYTE_TO_CEBU,230,5DAAN_4TAB2
+LEYTE_TO_BOHOL,138,4MAAS_7UBA1
+CEBU_TO_NEGROS,138,5SAMB_6AML1
+CEBU_TO_NEGROS,138,5SAMB_6AML2
+NEGROS_TO_NEGROS,230,6CAY_6CAD1
+NEGROS_TO_NEGROS,230,6CAY_6CAD2
+LANAO_TO_LANAO,138,10BALO_10AG22
+LANAO_TO_LANAO,138,10BALO_10AG41
+NORTH WESTERN MINDANAO_TO_LANAO,138,10BALO_09AUR1
+NORTH WESTERN MINDANAO_TO_LANAO,138,10AGS5_09AUR1
+NORTH WESTERN MINDANAO_TO_NORTH WESTERN MINDANAO,138,09NAGA_09ZAM1
+NORTH WESTERN MINDANAO_TO_NORTH WESTERN MINDANAO,138,09NAGA_09ZAM2
+EOF,,\nEOF,,,`;
+
+        function parseCSV(csv) {
+            const lines = csv.trim().split('\n');
+            if (lines.length < 2) return [];
+            const headers = lines[0].split(',');
+            return lines.slice(1).filter(line => line.trim() && !line.startsWith('EOF')).map(line => {
+                const values = []; let cur = ''; let inQ = false;
+                for (let c of line) { if (c === '"') inQ = !inQ; else if (c === ',' && !inQ) { values.push(cur.trim()); cur = ''; } else cur += c; }
+                values.push(cur.trim());
+                const obj = {}; headers.forEach((h, i) => { const key = h.trim(); if (key) obj[key] = (values[i] || '').replace(/"/g, '').trim(); });
+                return obj;
+            });
+        }
+
+        const rawStations = parseCSV(csvStations);
+        const stations = [...new Set(rawStations.map(s => s['STATION NAME']))].filter(Boolean).map(id => {
+            const b = rawStations.filter(r => r['STATION NAME'] === id);
+            return {
+                id, name: id.replace(/^\\d+/, '').replace(/_/g, ' '),
+                region: b[0] ? b[0].REGION_NAME : 'N/A',
+                voltages: [...new Set(b.map(x => x['VOLTAGE LEVEL']))],
+                type: b.some(x => x['VOLTAGE LEVEL'] >= 500) ? 'EHV' : 'Station',
+                conns: b.length
+            };
+        });
+        const generators = parseCSV(csvGenerators).map(g => ({
+            id: g['RESOURCE NAME'], name: g['DESCRIPTION'], region: g['REGION NAME'], station: g['STATION NAME'], company: g['TRADING PARTICIPANT']
+        }));
+        const loads = parseCSV(csvLoads);
+        const branchGroups = parseCSV(csvBranchGroups);
+
+        let activeFilters = { type: [], region: [] };
+
+        function init() {
+            lucide.createIcons();
+            document.getElementById('stat-nodes').innerText = stations.length;
+            document.getElementById('stat-assets').innerText = generators.length + loads.length;
+            document.getElementById('count-gens').innerText = generators.length;
+            document.getElementById('count-loads').innerText = loads.length;
+            document.getElementById('count-branches').innerText = [...new Set(branchGroups.map(bg => bg['BRANCH GROUP NAME']))].filter(Boolean).length;
+
+            renderFeatured(); renderBranchGroups(); setupSearch();
+            setTimeout(() => { const s = document.getElementById('splash'); s.style.opacity = '0'; setTimeout(() => s.style.display = 'none', 500); }, 1000);
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => { n.classList.toggle('active', n.getAttribute('onclick').includes(pageId)); });
+        }
+
+        function setupSearch() {
+            const input = document.getElementById('global-search');
+            input.oninput = () => performSearch();
+            document.getElementById('reset-search').onclick = () => {
+                input.value = ''; activeFilters = { type: [], region: [] };
+                document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+                performSearch();
+            };
+            document.getElementById('filter-toggle').onclick = () => document.getElementById('filter-panel').classList.toggle('active');
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.onclick = () => {
+                    const filter = chip.dataset.filter; const val = chip.dataset.value;
+                    chip.classList.toggle('active');
+                    if (chip.classList.contains('active')) activeFilters[filter].push(val);
+                    else activeFilters[filter] = activeFilters[filter].filter(v => v !== val);
+                    performSearch();
+                };
+            });
+        }
+
+        function performSearch() {
+            const term = document.getElementById('global-search').value.toLowerCase();
+            const container = document.getElementById('featured-stations');
+            if (term.length < 2 && activeFilters.type.length === 0 && activeFilters.region.length === 0) return renderFeatured();
+
+            let sHits = stations; let gHits = generators; let lHits = loads;
+            if (term.length >= 2) {
+                sHits = stations.filter(s => s.name.toLowerCase().includes(term) || s.id.toLowerCase().includes(term));
+                gHits = generators.filter(g => (g.name || '').toLowerCase().includes(term) || (g.id || '').toLowerCase().includes(term));
+                lHits = loads.filter(l => (l['RESOURCE NAME'] || '').toLowerCase().includes(term));
+            }
+            if (activeFilters.region.length > 0) {
+                sHits = sHits.filter(s => activeFilters.region.includes(s.region));
+                gHits = gHits.filter(g => activeFilters.region.includes(g.region));
+                lHits = lHits.filter(l => {
+                    const s = stations.find(x => x.id === l['STATION NAME']);
+                    return s && activeFilters.region.includes(s.region);
+                });
+            }
+            let results = [];
+            if (activeFilters.type.length === 0) results = [...sHits.map(x => ({ ...x, t: 'S' })), ...gHits.map(x => ({ ...x, t: 'G', name: x.name })), ...lHits.map(x => ({ ...x, t: 'L', name: x['RESOURCE NAME'] }))];
+            else {
+                if (activeFilters.type.includes('station')) results = [...results, ...sHits.map(x => ({ ...x, t: 'S' }))];
+                if (activeFilters.type.includes('gen')) results = [...results, ...gHits.map(x => ({ ...x, t: 'G', name: x.name }))];
+                if (activeFilters.type.includes('load')) results = [...results, ...lHits.map(x => ({ ...x, t: 'L', name: x['RESOURCE NAME'] }))];
+            }
+            container.innerHTML = `<p style="font-size:0.8rem; margin-bottom:12px;">${results.length} results found</p>` + results.slice(0, 30).map(r => `
+                <div class="list-item" onclick="openDetails('${r.t === 'L' ? 'S' : r.t}', '${r.id || r.station || r['STATION NAME']}')">
+                    <div class="icon-box ${r.t === 'G' ? 'icon-green' : r.t === 'L' ? 'icon-blue' : 'icon-purple'}"><i data-lucide="${r.t === 'G' ? 'zap' : r.t === 'L' ? 'arrow-down-circle' : 'map-pin'}"></i></div>
+                    <div class="item-content"><div class="item-title">${r.name}</div><div class="item-subtitle">${r.t === 'S' ? 'STATION' : r.t === 'G' ? 'GEN' : 'LOAD'} • ${r.id || ''}</div></div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function renderFeatured() {
+            const container = document.getElementById('featured-stations');
+            const featured = stations.filter(s => s.type === 'EHV' || s.conns > 2).slice(0, 4);
+            container.innerHTML = featured.map(s => `
+                <div class="list-item" onclick="openDetails('S', '${s.id}')">
+                    <div class="icon-box ${s.type === 'EHV' ? 'icon-purple' : 'icon-blue'}"><i data-lucide="map-pin"></i></div>
+                    <div class="item-content"><div class="item-title">${s.name}</div><div class="item-subtitle">${s.region} • ${s.voltages.join(', ')}kV</div></div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function renderBranchGroups() {
+            const unique = [...new Set(branchGroups.map(bg => bg['BRANCH GROUP NAME']))].filter(Boolean);
+            document.getElementById('branch-groups-list').innerHTML = unique.slice(0, 12).map(name => `
+                <div class="list-item" onclick="simulateImpact('branch', '${name}')">
+                    <div class="icon-box icon-purple"><i data-lucide="git-branch"></i></div>
+                    <div class="item-content"><div class="item-title">${name}</div><div class="item-subtitle">Transmission corridor</div></div>
+                    <i data-lucide="alert-triangle" style="color:var(--danger); width:16px;"></i>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function openIndexBreakdown(type) {
+            const overlay = document.getElementById('details-overlay');
+            const content = document.getElementById('details-content');
+            let html = "";
+            let title = "";
+
+            if (type === 'GEN') {
+                title = "Generator Index";
+                html = generators.map(g => `
+                    <div class="list-item" onclick="simulateImpact('gen', '${g.id}')">
+                        <div class="icon-box icon-green"><i data-lucide="zap"></i></div>
+                        <div class="item-content"><div class="item-title">${g.name}</div><div class="item-subtitle">Station: ${g.station}</div></div>
+                        <div class="affected-badge" style="background:var(--danger); color:white;">N-1</div>
+                    </div>
+                `).join('');
+            } else if (type === 'LOAD') {
+                title = "Load Center Index";
+                html = loads.map(l => `
+                    <div class="list-item" onclick="openDetails('S', '${l['STATION NAME']}')">
+                        <div class="icon-box icon-blue"><i data-lucide="arrow-down-circle"></i></div>
+                        <div class="item-content"><div class="item-title">${l['RESOURCE NAME']}</div><div class="item-subtitle">Station: ${l['STATION NAME']}</div></div>
+                    </div>
+                `).join('');
+            } else if (type === 'BRANCH') {
+                title = "Transmission Index";
+                const unique = [...new Set(branchGroups.map(bg => bg['BRANCH GROUP NAME']))].filter(Boolean);
+                html = unique.map(name => `
+                    <div class="list-item" onclick="simulateImpact('branch', '${name}')">
+                        <div class="icon-box icon-purple"><i data-lucide="git-branch"></i></div>
+                        <div class="item-content"><div class="item-title">${name}</div><div class="item-subtitle">Transmission corridor</div></div>
+                        <div class="affected-badge" style="background:var(--danger); color:white;">N-1</div>
+                    </div>
+                `).join('');
+            }
+
+            document.getElementById('details-title').innerText = title;
+            content.innerHTML = `<div class="data-list">${html}</div>`;
+            overlay.classList.add('active');
+            lucide.createIcons();
+        }
+
+        function openDetails(type, id) {
+            const s = stations.find(x => x.id === id); if (!s) return;
+            const sGens = generators.filter(g => g.station === s.id);
+            const sLoads = loads.filter(l => l['STATION NAME'] === s.id);
+            const buses = rawStations.filter(r => r['STATION NAME'] === id);
+            document.getElementById('details-title').innerText = s.name;
+            document.getElementById('details-content').innerHTML = `
+                <div class="stats-grid"><div class="stat-card" style="padding:15px; border-left:4px solid var(--primary);"><label>Node ID</label><div class="value" style="font-size:1rem;">${s.id}</div></div><div class="stat-card" style="padding:15px;"><label>Region</label><div class="value" style="font-size:1rem;">${s.region}</div></div></div>
+                <button class="impact-btn" onclick="simulateImpact('station', '${s.id}')"><i data-lucide="zap-off"></i> Simulate N-1 Station Outage</button>
+                <div class="section-header"><h2>Bus Conf</h2></div>
+                <div class="data-list">${buses.map(b => `<div class="list-item"><div class="item-content"><div class="item-title">${b['BUS NAME']}</div><div class="item-subtitle">${b['VOLTAGE LEVEL']} kV</div></div></div>`).join('')}</div>
+                <div class="section-header"><h2>Connected Gens</h2></div>
+                <div class="data-list">${sGens.map(g => `<div class="list-item" onclick="simulateImpact('gen', '${g.id}')"><div class="icon-box icon-green"><i data-lucide="zap"></i></div><div class="item-content"><div class="item-title">${g.name}</div></div><div class="affected-badge">N-1</div></div>`).join('') || '<p>None</p>'}</div>
+            `;
+            document.getElementById('details-overlay').classList.add('active');
+            lucide.createIcons();
+        }
+
+        function openInterconnection(id) {
+            const overlay = document.getElementById('details-overlay');
+            const content = document.getElementById('details-content');
+            if (id === 'MVIP') {
+                document.getElementById('details-title').innerText = "MVIP Details";
+                content.innerHTML = `<div class="stat-card" style="border-left:4px solid #3b82f6;"><h3>Mindanao-Visayas Interconnection</h3><p>Complete submarine HVDC link connecting the Kolambugan (Mindanao) and Cebu hubs. 450MW capacity.</p></div>
+                <div class="section-header"><h2>Interconnection Nodes</h2></div>
+                <div class="list-item" onclick="openDetails('S', '09AUROR')"><div class="icon-box icon-blue"><i data-lucide="map-pin"></i></div><div class="item-content"><div class="item-title">Kolambugan / Aurora Hub</div></div></div>
+                <div class="list-item" onclick="openDetails('S', '05CEBU')"><div class="icon-box icon-blue"><i data-lucide="map-pin"></i></div><div class="item-content"><div class="item-title">Cebu Hub</div></div></div>`;
+            } else {
+                document.getElementById('details-title').innerText = "HVDC Leyte-Luzon";
+                content.innerHTML = `<div class="stat-card" style="border-left:4px solid #10b981;"><h3>Leyte-Luzon Bi-pole</h3><p>Connecting the Ormoc (Visayas) Converter Station to Naga (Luzon).</p></div>
+                <div class="section-header"><h2>Interconnection Nodes</h2></div>
+                <div class="list-item" onclick="openDetails('S', '04ORMOC')"><div class="icon-box icon-blue"><i data-lucide="map-pin"></i></div><div class="item-content"><div class="item-title">Ormoc Hub</div></div></div>
+                <div class="list-item" onclick="openDetails('S', '03NAGA')"><div class="icon-box icon-blue"><i data-lucide="map-pin"></i></div><div class="item-content"><div class="item-title">Naga Hub</div></div></div>`;
+            }
+            overlay.classList.add('active');
+            lucide.createIcons();
+        }
+
+        function simulateImpact(type, id) {
+            let title = id; let desc = ""; let list = [];
+            if (type === 'station') {
+                const s = stations.find(x => x.id === id); title = `N-1: ${s.name}`; desc = "Simulated total loss of station nodes.";
+                const sGens = generators.filter(g => g.station === id); const sLoads = loads.filter(l => l['STATION NAME'] === id);
+                list = [...sGens.map(g => ({ n: g.name, t: 'Gen' })), ...sLoads.map(l => ({ n: l['RESOURCE NAME'], t: 'Load' }))];
+            } else if (type === 'branch') {
+                title = `N-1 Line Out: ${id}`; desc = "Corridor severed. Redundant paths required for stability.";
+                const links = branchGroups.filter(x => x['BRANCH GROUP NAME'] === id); list = links.map(l => ({ n: l['EQUIPMENT NAME'], t: 'Circuit' }));
+            } else if (type === 'gen') {
+                const g = generators.find(x => x.id === id); title = `N-1 Gen trip: ${g.id}`; desc = `${g.name} tripped. Regional reserves deployed.`;
+                list = [{ n: g.station, t: 'Origin Node' }, { n: g.company, t: 'Asset Owner' }];
+            }
+            document.getElementById('impact-content').innerHTML = `<div class="stat-card" style="border:2px solid var(--danger);"><div style="color:var(--danger); font-weight:700;">${title}</div><p>${desc}</p></div>
+            <div class="section-header"><h2>Affected / Risk Factors</h2></div>
+            <div class="data-list">${list.map(a => `<div class="list-item"><div class="icon-box icon-red"><i data-lucide="zap-off"></i></div><div class="item-content"><div class="item-title">${a.n}</div><div class="item-subtitle">${a.t} Impacted</div></div><span class="affected-badge">HIGH</span></div>`).join('')}</div>`;
+            document.getElementById('impact-overlay').classList.add('active');
+            lucide.createIcons();
+        }
+
+        function closeDetails() { document.getElementById('details-overlay').classList.remove('active'); }
+        function closeImpact() { document.getElementById('impact-overlay').classList.remove('active'); }
+        window.onload = init;
+    </script>
+</body>
+
+</html>
